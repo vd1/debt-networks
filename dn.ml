@@ -207,7 +207,7 @@ iteration 20
 Note the decreasing  monotonicity
 (we are computing a greatest fixed point)
 
-all the value has gone to B!
+all the value has gone to C!
 down from the expected 202 - 45 = 157
 to 128
 
