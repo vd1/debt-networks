@@ -139,11 +139,30 @@ residual debt  =
 (* clearing vector map *)
 
 (* ideal dues - static *)
-(* should compute it from dn *)
-let dues = 
-Array.of_list
-     (List.map float_of_int [83;65;45;50])
+(* how much j should receive ideally *)
+let due_to j = 
+  Array.fold_left
+    (fun x e -> x + e.(j))
+    0
 ;;
+
+let owed_by i dn = 
+  Array.fold_left
+    (fun x e -> x + e)
+    0
+    dn.(i)
+
+let owed = 
+Array.init 4 (fun j -> owed_by j dn)
+;;
+
+let due =
+Array.init 4 (fun j -> due_to j dn)
+;;
+
+assert (sum_l owed == sum_l due)
+;;
+
 
 (* returns the amount of money collected by node i under clearing vector du *)
 let phi i du = 
@@ -169,7 +188,7 @@ let psi du =
   Array.mapi
     (fun i x ->
       if (x <= dues.(i))
-      then x       (* limited liability *)
+      then x       (* limited liability *) (* multiply by alpha < 1 here  *)
       else dues.(i)
     )
     a1
@@ -221,4 +240,17 @@ maybe a phase transition?
  *       fp algo converges fast modulo solving the linear system
  *       model cycle: place bets - run them to term - solve for fp
  *       this is code - so we can make it an sc!
+*)
+
+
+(* todo
+
+split the phi functions in 2 pieces
+the linear transform and the min(_,\bar L)
+
+split the linear transform into 
+1) an alpha 
+ventilation - not necessarily proportional
+and 2) a linear collection
+
 *)
