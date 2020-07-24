@@ -1,10 +1,14 @@
 \documentclass{article}
+\usepackage{geometry}
+%\geometry{landscape}                   	
+\geometry{width=520pt,columnsep=30pt}
 \usepackage[utf8]{inputenc}
 \usepackage{amssymb,amsmath}
 \usepackage{hyperref}
 \usepackage[all]{xypic}
 \newtheorem{theorem}{Th}
 \newtheorem{definition}{Def}
+
 \def\AR#1{
 \[
 \begin{array}{llllllll}
@@ -36,16 +40,15 @@ under node fusion}
 Consider a DN $(e,L)$, with $L_i$
 a clearing vector.
 
-La fusion est décrite par 
-$f: I \to I-[ab]+\{[ab]:=I'\}$.
 
-Suppose we fuse $a$, $b$ in $L$.
+Suppose we fuse nodes $a$, $b$ in $L$.
+The fusion is described by
+$f: I \to I\setminus\{a,b\}+\{[ab]\}:=I'$.
 
 
 \subsection{fusion of solvables} 
 Suppose both are solvable:
-\[
-\begin{array}{lllr}
+\AR{
 e_a +
 \sum_{j\neq a,b} \pi_{ja} L_j
 + \pi_{ba} L_b
@@ -84,9 +87,7 @@ e_{[ab]} - \kappa(a,b) +
 \\
 &=&
 \bar L_{a,b}
-\end{array}
-\]
-
+}
 donc les noeuds fusionnés restent L-solvables
 dès que 
 $\kappa(a,b)=0$.
@@ -276,17 +277,26 @@ L_{ab}- L_{ba}
 \ar[d]^{=}
 &
 \mathbb R_+^I 
-\ar[r]^{\phi_}\ar[d]_{C(f)}
+\ar[r]^{\phi}
+\ar[d]_{C(f)}
 &
-\mathbb R_+^I\ar[d]^{C(f)}
+\mathbb R_+^I
 \ar[r]^{max(\_,\bar  L)}
-&\mathbb R_+^I\ar[d]^{C(f)}
+\ar[d]^{C(f)}
+&
+\mathbb R_+^I
+\ar[d]^{C(f)}
 \\
-1\ar[r]^{C(f)(\bar  L)}&
-\mathbb R_+^{I'} \ar[r]^{\phi'_1}
-&\mathbb R_+^{I'}
+1
+\ar[r]^{C(f)(\bar  L)}
+&
+\mathbb R_+^{I'} 
+\ar[r]^{\phi'_1}
+&
+\mathbb R_+^{I'}
 \ar[r]^{max(\_,C(f)(\bar  L))}
-&\mathbb R_+^{I'}
+&
+\mathbb R_+^{I'}
 }
 }
 
@@ -394,7 +404,7 @@ Dans le cas (4), i peut devenir insolvable par baisse d'asset ou par contagion.
 
 A priori quand $$\alpha=\beta=1$$ ce n'est pas possible.
 
-$(x\@ x)$ est un clearing vector:
+$(x\; x)$ est un clearing vector:
 \AR{
 x + e < \gamma
 &\Rightarrow& 
@@ -976,9 +986,11 @@ pour $S=0$ donc mort de la magouille!
 
 \subsection{dérivées}
 
-En cas de prêts asymétriques, soient : $S_{1}$ la dette supplémentaire de $1$ envers $n$, et $S_{2}$ la dette de $n$ envers $1$.
+En cas de prêts assymétriques, soient: 
+$S_{1}$ la dette supplémentaire de $1$ envers $n$, et 
+$S_{2}$ la dette de $n$ envers $1$.
 
-\EQ{
+\AR{
 \mu(S_{1},S_{2}) = 
 \beta
 (S_{2} + L_{21}) 
@@ -991,7 +1003,7 @@ En cas de prêts asymétriques, soient : $S_{1}$ la dette supplémentaire de $1$
 (S_{2} + L_{21})- S_{2}
 }
 si $S_1=S_2$ on a ajouté une paire de créances symétriques ce qui ne changent pas les assets; si les deux dettes sont différentes il vaut mieux utiliser l'équation ci-dessous qui prend en compte la différence:
-\EQ{
+\AR{
 \mu_1(S_{1},S_{2}) = 
 (\alpha (S_{1}-S_2) + 
 \beta
