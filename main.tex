@@ -26,15 +26,34 @@
 }
 
 \title{DN}
-\author{theotimez}
-\date{May 2020}
-
+\author
+{
+Théotime Zakia
+\\ 
+mémoire de M2 LMFI sous la direction de Vincent Danos
+}
+\date{Jun-Aug 2020}
 
 \begin{document}
 
 \maketitle
 
-\section{Behaviour of a clearing functor
+Sujet: etude des algos de clearing de reseau de dettes du point de vue game-theory.
+
+On rappelle/montre que le pp du greatest fixed point est bon et se prete bien à un calcul si on veut un clearing qui respecte:
+1) limited liability, 
+2) proportionality principle, 
+3) devoir tout payer. 
+(Smallest fixed point ne marche pas bien dans le cas 
+$\alpha$, 
+$\beta <1$). 
+On definit plusieurs variantes du jeu de clearing ou les joueurs ont le temps de faire des ajustements a leur reseau de dettes avt clearing. On montre que le jeu de
+clearing peut conduire 1) a des situations ou certains joueurs sont lésés [FRAUDES], 2) mais aussi conduire à des optima de Pareto inaccessibles sinon (si on décrète un gel total avec clearing).
+
+Reste à analyser complètement cette classe de jeu et concevoir de ``bonnes'' règles qui permettent idéalement de prévenir 1) tout en préservant 2). 
+
+\section{
+Behaviour of a clearing functor
 under node fusion}
 
 Consider a DN $(e,L)$, with $L_i$
@@ -91,8 +110,6 @@ e_{[ab]} - \kappa(a,b) +
 donc les noeuds fusionnés restent L-solvables
 dès que 
 $\kappa(a,b)=0$.
-
-
 
 Suppose $j\neq a, b$:
 \AR{
@@ -368,8 +385,6 @@ Plus generalement, quel est la sensibilité du vecteur de $L^\star$ aux variatio
 symetrique.
 
 
-
-
 \subsection{4 possibilities}
 Soit $L$ un système financier à $n$ banques toutes solvables.
 
@@ -539,7 +554,7 @@ $\sum_{j=2}^{n-1} (\Lambda^{(\mu)}_{j} \pi_{j1} + \Lambda^{(\mu)}_{j} \pi_{jn}) 
 
 Ce résultat indique que deux banque $\mu$-insolvables qui risque d'être contagionnées par l'insolvabilité des banques $<\mu$-insolvables ne peuvent stopper la propagation en fusionnant ensemble (ce qui leurs aurait permi de laisser les banques les plus insolvables sombrer).
 
-\textbf{Question} : la fusion d'une banque $\mu$-insolvable et d'une $>\mu+1$-insolvable peut-elle être solvable? Si $\mu > 0$ cela revient à laisser les banques 0-insolvables mourir, si $\mu$=0 cela reviendrait à peut-être sauver aussi les banques $<\mu+1$-insolvables sans que celles ci fusionnent, ou alors à sauver des banques sélectivement suivant leur niveau d'insolvabilité..
+\textbf{Question} : la fusion d'une banque $\mu$-insolvable et d'une $>\mu+1$-insolvable peut-elle être solvable? Si $\mu > 0$ cela revient à laisser les banques 0-insolvables mourir, si $\mu$=0 cela reviendrait à peut-être sauver aussi les banques $<\mu+1$-insolvables sans que celles ci fusionnent, ou alors à sauver des banques sélectivement suivant leur niveau d'insolvabilité.
 
 
 paiements paradoxaux. Au début T, V ont 1 et la dette mutuelle est 2:
@@ -1379,7 +1394,7 @@ de plus
 
 Il n'y a pas de points critiques, les deux dérivées sont négatives pour les contraintes imposées ($S_{1} - S_{2} > 0$ et 1 reste insolvable)  donc la maximum est atteint pour $S_{1}=S_{2}=0$.
 
-\section{Standstill: le jeu à trois joueurs}
+\section{Standstill: le jeu à trois joueurs}\label{stand}
 \underline{Modélisation d'un prêt}: supposons que $i$ prete $x$ à $j$,
 la maj correspondante est la suivante:
 \AR{
@@ -1452,6 +1467,317 @@ les coups d'emprunt sont en fait des coups du préteur.
 
 $\partial_{S_1}\mu_1\leq 0$ en $0$,
 ce qui veut dire que c'est dans l'intéret du joueur $n$ de rembourser $1$!
+
+
+\section{remboursement}
+Soit un système à $n+1$ banques avec la banque $0$ insolvable et les autres solvables. 
+
+On note 
+$ \vec{x} = (x_1 ; x_2; ... ; x_n)$ , le vecteur des remboursements anticipés de la banque 0 aux autres banques du système. 
+
+On doit avoir $\sum_i x_i \leq e_0$, 
+et $x_i\leq L_{0i}$.
+
+Ainsi la richesse d'une banque $i$ est donnée par :
+
+$R(i)= e_i + x_i + (\alpha (e_0 - \sum x_j) + \beta \sum L_{j0}) \dfrac{L_{0i}- x_i}{\sum (L_{0j} - x_j)} + \sum_{j \neq 0} L_{ji} - \sum L_{ij}$
+
+\textbf{NB}: on ne peut pas vraiment tout vendre sans rencontrer le pb du $\alpha$ de firesale; mais une petite partie des actifs.
+
+En faisant la somme des richesses des banques on obtient :
+
+$\bar R = \sum_i R(i) = \sum_i (e_i + x_i) +  (\alpha (e_0 - \sum x_j) + \beta \sum L_{j0}) + \sum_i \sum_{j \neq 0} - \sum_i \sum_j$
+  
+Par conséquent 
+
+$\dfrac{\partial \bar R}{\partial x_i} = 1 - \alpha\geq0$
+
+Il est donc préférable pour l'ensemble du système que la banque $0$ rembourse une banque au maximum de façon anticipée. Cependant des banques seront défavorisées par ce remboursement (peut être même la banque remboursée). 
+
+En effet le signe de la dérivée dépend des paramètres $\alpha, \beta$, $e_0$ et $L_{ij}$ : 
+\AR{
+\dfrac
+{dR(i)}
+{dx_i} =
+1 + 
+\dfrac
+{d(\alpha (e_0 - \sum x_j) + \beta \sum L_{j0})}
+{dx_i}
+ \dfrac
+{L_{0i}- x_i}
+{\sum (L_{0j} - x_j)} + 
+(\alpha (e_0 - \sum x_j) + \beta \sum L_{j0}) 
+\dfrac
+{d\dfrac{L_{0i}- x_i}{\sum (L_{0j} - x_j)}}
+{dx_i}
+\\
+\dfrac
+{dR(i)}
+{dx_i}  =
+1 + (-\alpha)  
+\dfrac
+{L_{0i}- x_i}
+{\sum (L_{0j} - x_j)} +
+(\alpha (e_0 - \sum x_j) + \beta \sum L_{j0}) 
+\dfrac
+{-\sum (L_{0j} - x_j) - (- (L_{0i}-x_i))}
+{(\sum (L_{0j} - x_j))^2} 
+\\
+\dfrac
+{dR(i)}
+{dx_i} =
+1 -\alpha  
+\dfrac
+{L_{0i}- x_i}
+{\sum (L_{0j} - x_j)} - 
+(\alpha (e_0 - \sum x_j) + \beta \sum L_{j0}) 
+\dfrac
+{\sum_{j\neq i} (L_{0j} - x_j)}
+{(\sum (L_{0j} - x_j))^2}
+}
+
++ calculer $dR_i/dx_j$; on sait que la somme par colonne est constante
+
++ voir si on peut trouver des exemples explicites (qui respectent les contraintes de solvabilite/insolvabilite
+et de budget) pour illustrer l'idee que le profit de la banque i peut croitre et decroitre en fonction de x
+
+\section{modèle en temps}
+On peut imaginer le vecteur $x$ comme une fonction variant au cours du temps (discret). Le vecteur des re-paiments de la banque 0 est:
+\AR{
+\vec x(t) = (x_1(t), ..., x_n(t))
+}
+avec 
+$x_i(t+1) \leq e_0 - \sum_{s=0}^{t}x_i(s)$ et $L_{0i}(t+1)=L_{0i}(t) - x_i(t+1)$ et
+$e_i(t+1) = e_i(t) +x_i(t+1)$ (pour $i>0$).
+
+Sous ces conditions une banque 0-insolvable à un moment $t$ ne sera pas non plus solvable lors d'un clearing à un temps $t+1$.
+
+Si une banque est 0-insolvable et une banque 1-insolvable (pour un clearing à un moment $t$) alors le remboursement de la banque 0-insolvable pourrait augmenter la richesse de la banque 1-insolvable et donc la rendre plus solvable (pour un clearing qui aurait lieu à un moment $>t$). 
+
+0 est une banque 0-insolvable :
+
+$e_0 + \sum L_{j0} < \sum L_{0j}$
+
+1 est une banque 1-insolvable : 
+\AR{
+e_1 + \sum L_{j1} &\geq& \sum L_{1j}
+\\
+e_1 + (\alpha e_0 + \beta \sum L_{j0}) \dfrac{L_{01}}{\sum L_{0j}} + \sum_{j\neq0} L_{j1} 
+&<& \sum L_{1j}
+}
+
+En cas de remboursement anticipé pour un montant de $x$ la richesse de 1 est le max de 0 et:
+\AR{
+R_1(x) &=&
+e_1 + x + (\alpha (e_0 - x) + \beta \sum L_{j0}) \dfrac{L_{01}-x}{\sum L_{0j}-x} + \sum_{j \neq 0} L_{j1} - \sum L_{1j}
+}
+Cette fonction peut s'écrire à une constante près:
+\AR{
+R_1(x) &=&
+x + \phi(x)(\beta- \alpha x )
+}
+avec $\phi(x) = 1/ 1 + (\sum_{j\neq 1}L_{0j}/L_{01}-x)$,
+décroissante (recall $L_{01}\geq x$).
+
+Pour que 1 devienne au moins 2-insolvable il faut et il suffit que $R_1(x)>0$, et il suffit que (en utilisant l'inégalité de 0-solvabilité):
+\AR{
+x + 
+(\alpha (e_0 - x) + \beta \sum L_{j0})
+ \dfrac
+{L_{01}-x}
+{\sum L_{0j}-x} 
+\geq 
+L_{01}
+\\
+\dfrac
+{(\alpha (e_0 - x) + \beta \sum L_{j0})}
+{\sum L_{0j}-x}
+\geq
+1
+\\
+(\alpha (e_0 - x) + \beta \sum L_{j0})
+\geq
+\sum L_{0j}-x
+%\\
+%\sum L_{j0} 
+%(\beta - 1)
+%\geq
+%x(\alpha -1) - 
+%\alpha e_0
+%\\
+%x
+%\geq
+%\dfrac
+%{\sum L_{j0} (1-\beta) - \alpha e_0}
+%{1- \alpha}
+\\
+x(1-\alpha)
+\geq
+\sum L_{0j}
+- \beta \sum L_{j0}
+- \alpha e_0 
+}
+
+
+Si on prend un système à trois banques :
+0 est 0-insolvable, 1 est 1-insolvable, 2 est solvable.
+
+Avec 
+$e_0 = 3, e_1 = 1, L_{10}= 1, L_{20}=2, L_{01}=3, L_{02}=4, L_{12} = 4$ et 
+$\alpha = \beta =0.5$
+Alors regarder le graphe.
+
+Avec $e_0 = 3, e_1 = 1, L_{10}=  L_{20}=4.5, L_{01}=L_{02}=7, L_{12} = 2, L_{21}=1$  et 
+$\alpha = 0.5$, 
+$\beta =0.6$ ça ne marche pas (regarder le graphe).
+
+La valeur maximale que peut prendre $x$ 
+est $\min(L_{01},e_0)$.
+
+\section{Jeu de clearing}
+On a vu qu'une banque 1-insolvable, appelons là 1, au temps $t$ pourrait être rendue solvable par un remboursement d'une la banque 0-insolvable, appelons là 0, au temps $t+n$. On peut alors imaginer deux cas de figures:
+
+(1) La banque 1 paie $\gamma$ à la banque 0 pour qu'elle accélère le remboursement qui se serait produit au temps $t+n$ (car soit on ne connait pas la date du clearing, soit on la connait et elle se situe avant $t+n$). Ici $\gamma$ est plutôt un bakchich qui sort du système pour aller dans les poches du décisionnaire de la banque $0$ (abus de bien social). En échange, la banque $0$ va rembourser de manière anticipée une partie $x_0\leq L_{01}$ (à moins de prêter à $1$), 
+$x_0\leq e_0$ de ce qu'elle doit à la banque $1$.
+
+\AR{
+L_{ji} \leftarrow L_{ji}
+\\
+e_{1} \leftarrow e_{1} - \gamma
+\\
+e_{i} \leftarrow e_{i} 
+}
+
+(2) La banque 1 paie $\vec \gamma = (\gamma_0, \gamma_2, \ldots, \gamma_n)$ aux autres banques du systèmes pour qu'elles acceptent de repousser la date du clearing après le remboursement [un peu à la manière d'un margin call]. Ici $\gamma$ est un vecteur représentant un transfert d'assets de 1 directement dans les assets des autres banques.
+
+\AR{
+L_{ji} \leftarrow L_{ji}
+\\
+e_{1} \leftarrow e_{1} - \sum \gamma_j
+\\
+e_{i} \leftarrow e_{i} + \gamma_i
+}
+
+
+\underline{Dans le cas (1)} la richesse de 1 est
+
+\AR{
+R(1) 
+&=&
+e_1 -
+\gamma +
+x_0 +
+(\alpha (e_0 - x_0) + \beta \sum L_{j0})
+ \dfrac
+{L_{01}- x_0}
+{\sum (L_{0j} - x_0)} + 
+\sum_{j \neq 0} L_{j1}-
+\sum L_{1j}
+\\
+R(1) 
+&=&
+e_1' +
+x_0 +
+(\alpha (e_0 - x_0) + \beta \sum L_{j0})
+ \dfrac
+{L_{01}- x_0}
+{\sum (L_{0j} - x_0)} + 
+\sum_{j \neq 0} L_{j1}-
+\sum L_{1j}
+}
+
+La richesse des banques $i\neq 0; 1$ est : 
+
+\AR{
+R(i) 
+&=&
+e_i +
+(\alpha (e_0 - x_0) + \beta \sum L_{j0})
+ \dfrac
+{L_{0i}}
+{\sum (L_{0j} - x_0)} + 
+\sum_{j \neq 0} L_{ji}-
+\sum L_{ij}
+}
+
+Si la banque 1 redevient solvable (ce qui est possible sous certains paramètres, notamment un $\gamma$ pas trop élevé; voir Section precedente), alors la richesse des banques $i$ n'est pas modifiée, seule 1 a perdu de l'argent dans l'opération (mais moins que sans le bakchich).
+
+Une fraude qui arrange tout le monde (Pareto-improving)?
+Recall section~\ref{stand}: on a montré que laisser jouer le jeu de remboursement anticipé (avec $\ga=0$)
+mène à des situations qu'on peut considérer être de véritables fraudes au sens où le joueur 2 est lésé par le non-respect du principe de proportionalité. Ici on voit au contraire que ce jeu peut être utile et améliorer l'issue pour tous les participants.
+\
+
+\underline{Dans le cas (2)} la richesse de 1 est
+
+\AR{
+R(1) 
+&=&
+e_1 - 
+\sum \gamma_i +
+x_0 +
+(\alpha (e_0 - x_0) + \beta \sum L_{j0})
+ \dfrac
+{L_{01}- x_0}
+{\sum (L_{0j} - x_0)} + 
+\sum_{j \neq 0} L_{j1}-
+\sum L_{1j}
+}
+
+La richesse des banques $i\neq 0; 1$ est : 
+
+\AR{
+R(i) 
+&=&
+e_i +
+\gamma_i +
+(\alpha (e_0 - x_0) + \beta \sum L_{j0})
+ \dfrac
+{L_{0i}}
+{\sum (L_{0j} - x_0)} + 
+\sum_{j \neq 0} L_{ji}-
+\sum L_{ij}
+}
+
+Toutes les banques sont plus riches car le transfert d'assets à assets est très avantageux.
+
+Mais si ce genre de transfert est autorisé alors ça change tout donc il faut définir un cadre précis.
+
+On aimerait utiliser une fonction de `fire sale' qui dépende la quantité liquidée pour mieux modéliser le remboursement anticipé, par exemple:
+$\alpha(x) = 1 - \exp(-a/x)$, 
+$\alpha(0)=1$, 
+$\alpha'(0)=0$, 
+$\alpha(\infty)=0$.
+
+
+\section{Conclusion}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
