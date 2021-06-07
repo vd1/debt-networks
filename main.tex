@@ -1,29 +1,25 @@
-\documentclass{article}
-\usepackage{geometry}
-%\geometry{landscape}                   	
-\geometry{width=520pt,columnsep=30pt}
+\documentclass[11pt,oneside,twocolumn]{article}   	
+\frenchspacing
+
+\usepackage{geometry}                		
+\geometry{paperwidth=1280pt,paperheight=790pt}                   	
+%\geometry{paperwidth=1200pt}                   	
+%\geometry{landscape}
+\geometry{columnsep=50pt}   
+%\geometry{textheight=600pt}
+%\geometry{textwidth=500pt}   
+             	
+%\usepackage[parfill]{parskip}    		
+
 \usepackage[utf8]{inputenc}
+\usepackage{times,textcomp}
 \usepackage{amssymb,amsmath}
 \usepackage{hyperref}
 \usepackage[all]{xypic}
 \newtheorem{theorem}{Th}
 \newtheorem{definition}{Def}
 
-\def\AR#1{
-\[
-\begin{array}{llllllll}
-#1
-\end{array}
-\]
-}
-
-\def\EQ#1{
-\[
-\begin{equation}
-#1
-\end{equation}
-\]
-}
+\usepackage{color,/Users/V/Dropbox/lib/vmacros}
 
 \title{DN}
 \author
@@ -40,15 +36,16 @@ mémoire de M2 LMFI sous la direction de Vincent Danos
 
 Sujet: etude des algos de clearing de reseau de dettes du point de vue game-theory.
 
-On rappelle/montre que le pp du greatest fixed point est bon et se prete bien à un calcul si on veut un clearing qui respecte:
+On rappelle/montre que le principe du greatest fixed point s'applique à ce problème
+et se prête bien à un calcul effectif si on veut un clearing qui respecte:
 1) limited liability, 
 2) proportionality principle, 
 3) devoir tout payer. 
 (Smallest fixed point ne marche pas bien dans le cas 
 $\alpha$, 
 $\beta <1$). 
-On definit plusieurs variantes du jeu de clearing ou les joueurs ont le temps de faire des ajustements a leur reseau de dettes avt clearing. On montre que le jeu de
-clearing peut conduire 1) a des situations ou certains joueurs sont lésés [FRAUDES], 2) mais aussi conduire à des optima de Pareto inaccessibles sinon (si on décrète un gel total avec clearing).
+On définit plusieurs variantes du jeu de clearing où les joueurs ont le temps de faire des ajustements a leur reseau de dettes avant clearing. On montre que le jeu de
+clearing peut conduire 1) à des situations ou certains joueurs sont lésés [FRAUDES], 2) mais aussi conduire à des optima de Pareto inaccessibles sinon (si on décrète un gel total avec clearing).
 
 Reste à analyser complètement cette classe de jeu et concevoir de ``bonnes'' règles qui permettent idéalement de prévenir 1) tout en préservant 2). 
 
@@ -74,7 +71,7 @@ e_a +
 &\geq&
 \bar L_{a}
 &
-\hbox{because $a$ solvable}
+\hbox{$a$ solvable}
 \\
 e_b +
 \sum_{j\neq a,b} \pi_{jb} L_j
@@ -82,7 +79,7 @@ e_b +
 &\geq&
 \bar L_{b}
 &
-\hbox{because $b$ solvable}
+\hbox{$b$ solvable}
 \\
 e_a + e_b +
 \sum_{j\neq a,b} (\pi_{ja}+\pi_{jb}) L_j
@@ -91,7 +88,10 @@ e_a + e_b +
 &\geq&
 \bar L_{a}
 +\bar L_{b}
-\\
+}
+where we have summed the IOB (input-output balance) of odes under fusion.
+To compare with the IOB of the fused node:
+\AR{
 e_{[ab]} - \kappa(a,b) +
 \sum_{j\neq a,b} (\pi_{ja}+\pi_{jb}) L_j
 &\geq&
