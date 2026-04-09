@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RFC Review — April 7, 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --navy: #0f1729;
+    --navy-light: #1a2744;
+    --navy-mid: #243352;
+    --accent: #4f8fff;
+    --accent-dim: #3a6fd8;
+    --white: #f0f2f5;
+    --gray: #8899aa;
+    --red: #ff5c5c;
+    --yellow: #f5c542;
+    --green: #4ecb71;
+    --orange: #ff9f43;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: #000;
+    color: var(--white);
+  }
+
+  .slide {
+    width: 100vw;
+    height: 100vh;
+    background: var(--navy);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 5vh 8vw;
+    position: relative;
+    overflow: hidden;
+    page-break-after: always;
+  }
+
+  .slide::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-dim), transparent);
+  }
+
+  .slide-num {
+    position: absolute;
+    top: 3vh;
+    right: 4vw;
+    font-size: 0.8rem;
+    color: var(--gray);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+  }
+
+  h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--accent);
+  }
+
+  h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 0.8rem;
+    color: var(--white);
+  }
+
+  p, li {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--white);
+  }
+
+  .subtitle {
+    font-size: 1.3rem;
+    color: var(--gray);
+    font-weight: 300;
+    margin-bottom: 2rem;
+  }
+
+  .meta {
+    font-size: 0.95rem;
+    color: var(--gray);
+    margin-top: 2rem;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0;
+  }
+
+  ul li {
+    padding: 0.4rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+  }
+
+  ul li::before {
+    content: '›';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-weight: 700;
+  }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4vw;
+    align-items: start;
+  }
+
+  .three-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 3vw;
+    align-items: start;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+
+  th {
+    text-align: left;
+    padding: 0.5rem 0.8rem;
+    background: var(--navy-mid);
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  td {
+    padding: 0.45rem 0.8rem;
+    border-bottom: 1px solid var(--navy-mid);
+    color: var(--white);
+  }
+
+  tr:last-child td { border-bottom: none; }
+
+  .tag {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .tag-built { background: #1a3d2a; color: var(--green); }
+  .tag-research { background: #3d3a1a; color: var(--yellow); }
+  .tag-future { background: #3d1a1a; color: var(--red); }
+
+  .card {
+    background: var(--navy-light);
+    border-radius: 8px;
+    padding: 1.5rem;
+    border-left: 3px solid var(--accent);
+  }
+
+  .card-warn {
+    border-left-color: var(--orange);
+  }
+
+  .card-red {
+    border-left-color: var(--red);
+  }
+
+  .big-number {
+    font-size: 3.5rem;
+    font-weight: 700;
+    color: var(--accent);
+    line-height: 1;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .big-label {
+    font-size: 0.9rem;
+    color: var(--gray);
+    margin-top: 0.3rem;
+  }
+
+  .quote {
+    font-size: 1.3rem;
+    font-style: italic;
+    color: var(--white);
+    border-left: 3px solid var(--accent);
+    padding-left: 1.5rem;
+    margin: 1.5rem 0;
+    line-height: 1.5;
+  }
+
+  .quote-src {
+    font-size: 0.9rem;
+    color: var(--gray);
+    font-style: normal;
+    margin-top: 0.5rem;
+  }
+
+  .highlight {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+  }
+
+  .structure-box {
+    background: var(--navy-light);
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+    margin: 0.3rem 0;
+    font-size: 0.95rem;
+  }
+
+  .structure-box .label {
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3rem;
+  }
+
+  .divider {
+    width: 60px;
+    height: 3px;
+    background: var(--accent);
+    margin: 1rem 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- Navigation -->
+<div id="nav" style="position:fixed;bottom:2vh;right:4vw;z-index:999;display:flex;gap:0.5rem;align-items:center;">
+  <span id="counter" style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;color:#8899aa;margin-right:0.5rem;">1 / 14</span>
+  <button onclick="go(-1)" style="all:unset;cursor:pointer;width:40px;height:40px;border-radius:50%;background:#1a2744;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#4f8fff;border:1px solid #243352;">&#8593;</button>
+  <button onclick="go(1)" style="all:unset;cursor:pointer;width:40px;height:40px;border-radius:50%;background:#1a2744;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#4f8fff;border:1px solid #243352;">&#8595;</button>
+</div>
+<script>
+  let cur = 0;
+  const slides = () => document.querySelectorAll('.slide');
+  function go(d) {
+    const s = slides();
+    cur = Math.max(0, Math.min(s.length - 1, cur + d));
+    s[cur].scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('counter').textContent = (cur + 1) + ' / ' + s.length;
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown' || e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(1); }
+    if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); go(-1); }
+  });
+</script>
+
+<!-- SLIDE 1: Title -->
+<div class="slide">
+  <span class="slide-num">01</span>
+  <h1>RFC Review<br><span style="color: var(--accent)">Meeting Prep</span></h1>
+  <div class="divider"></div>
+  <p class="subtitle">Improving Daniel's Morpho Collateral Risk Model proposal</p>
+  <p class="meta">April 7, 2026 — 15h CET<br>Vincent, Daniel, Amaury, Hamza</p>
+</div>
+
+<!-- SLIDE 2: Core Diagnosis -->
+<div class="slide">
+  <span class="slide-num">02</span>
+  <h2>Core Diagnosis</h2>
+  <p style="font-size: 1.15rem; margin-bottom: 2rem;">The RFC tries to be <span class="highlight">four documents at once</span> — and each mode weakens the others.</p>
+  <div class="two-col">
+    <div>
+      <div class="card" style="margin-bottom: 1rem;">
+        <h3>What it tries to be</h3>
+        <ul>
+          <li>Incident postmortem</li>
+          <li>Academic model paper</li>
+          <li>Product grant proposal</li>
+          <li>Team pitch</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="card card-red">
+        <h3>The real problem</h3>
+        <p style="font-size: 1.1rem;"><strong>Claim discipline.</strong> The document reads as if most of the system is built. In reality, only the dependency decomposition tooling exists. The quantitative model is research-stage.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: Claim Register -->
+<div class="slide">
+  <span class="slide-num">03</span>
+  <h2>Claim Register</h2>
+  <table>
+    <tr><th>Capability</th><th>Status</th><th>Evidence</th></tr>
+    <tr><td>Dependency graph engine (DIG)</td><td><span class="tag tag-built">BUILT</span></td><td>7+ protocol watchers, live outputs</td></tr>
+    <tr><td>Yield tree decomposition</td><td><span class="tag tag-built">BUILT</span></td><td>wsrUSD, Sentora PYUSD trees</td></tr>
+    <tr><td>Recursive risk analysis (qualitative)</td><td><span class="tag tag-built">BUILT</span></td><td>wsrUSD: 6 findings, scorecard</td></tr>
+    <tr><td>Six-factor scoring (Z1-Z6)</td><td><span class="tag tag-research">RESEARCH</span></td><td>Math spec v3.0 on paper</td></tr>
+    <tr><td>GJR-GARCH(1,1)-t calibration</td><td><span class="tag tag-research">RESEARCH</span></td><td>No backtest or fitted params</td></tr>
+    <tr><td>HMM regime-switching</td><td><span class="tag tag-research">RESEARCH</span></td><td>No calibrated transition matrix</td></tr>
+    <tr><td>Per-block volatility / PD / Rating</td><td><span class="tag tag-future">FUTURE</span></td><td>Zero live outputs</td></tr>
+    <tr><td>Circuit breaker / Dashboard</td><td><span class="tag tag-future">FUTURE</span></td><td>Not started</td></tr>
+  </table>
+  <p style="margin-top: 1.2rem; color: var(--orange); font-weight: 600;">~2 built, ~4 designed, ~6 not started. The RFC reads as if the ratio is inverted.</p>
+</div>
+
+<!-- SLIDE 4: Top 10 Recommendations -->
+<div class="slide">
+  <span class="slide-num">04</span>
+  <h2>10 Recommendations</h2>
+  <div class="two-col" style="font-size: 0.95rem;">
+    <div>
+      <ul>
+        <li><strong>Retitle</strong> → "Morpho Collateral Risk Transparency Layer"</li>
+        <li><strong>Lead with proof of work</strong> — wsrUSD + Sentora on page 1</li>
+        <li><strong>Split into 3 docs</strong> — RFC + Tech Appendix + Evidence</li>
+        <li><strong>Shadow mode</strong> — 60-90 days of non-binding model outputs</li>
+        <li><strong>Budget</strong> — $180K / 9 months, 3 gated tranches</li>
+      </ul>
+    </div>
+    <div>
+      <ul>
+        <li><strong>Name the team</strong>, drop "Sigma Labs"</li>
+        <li><strong>Credora</strong> — 3 sentences, complementary not adversarial</li>
+        <li><strong>Cite Prosperi</strong> — independent validation of 20-100x mispricing</li>
+        <li><strong>State 1.5-2 FTE</strong> explicitly</li>
+        <li><strong>#1 task</strong> — retroactive case study on past incidents</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5: Proposed RFC Structure -->
+<div class="slide">
+  <span class="slide-num">05</span>
+  <h2>Proposed RFC Structure</h2>
+  <div class="two-col">
+    <div>
+      <div class="structure-box">
+        <div class="label">Main RFC — 3-4 pages</div>
+        <ol style="padding-left: 1.2rem; font-size: 0.9rem;">
+          <li style="padding: 0.2rem 0;">Problem (0.5p) — incidents + Prosperi + public good</li>
+          <li style="padding: 0.2rem 0;">What Exists Today (1.5p) — DIG, trees, examples</li>
+          <li style="padding: 0.2rem 0;">What Grant Delivers (1p) — Phase 1 + Phase 2</li>
+          <li style="padding: 0.2rem 0;">Existing Work (0.25p) — Credora: 3 sentences</li>
+          <li style="padding: 0.2rem 0;">Team (0.25p) — named individuals, FTE</li>
+          <li style="padding: 0.2rem 0;">Budget & Milestones (0.5p) — 3 gated tranches</li>
+          <li style="padding: 0.2rem 0;">Sustainability (0.25p) — open core + paid API</li>
+        </ol>
+      </div>
+    </div>
+    <div>
+      <div class="structure-box" style="margin-bottom: 0.8rem;">
+        <div class="label">Technical Appendix</div>
+        <p style="font-size: 0.9rem;">Six-factor model, GARCH/HMM, Merton PD, math reference v3.0 link</p>
+      </div>
+      <div class="structure-box">
+        <div class="label">Evidence Appendix</div>
+        <p style="font-size: 0.9rem;">Full decompositions, retroactive case study, claim register (built / prototype / research / future)</p>
+      </div>
+      <div class="quote" style="margin-top: 1.5rem; font-size: 1.05rem;">
+        "If a delegate asks 'what can you show me working this week?' — the answer must be on page 1."
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 6: Budget -->
+<div class="slide">
+  <span class="slide-num">06</span>
+  <h2>Budget: One Grant, One Vote, One Scope</h2>
+  <table style="margin-bottom: 2rem;">
+    <tr><th>Period</th><th>Deliverable</th><th>Tranche</th></tr>
+    <tr><td>Months 1-3</td><td>Public vault decomposition API, top 20-30 vaults, dossiers</td><td>~$60K</td></tr>
+    <tr><td>Months 4-6</td><td>Oracle/liquidity/governance alerting, dashboard v1, incident replay</td><td>~$60K</td></tr>
+    <tr><td>Months 7-9</td><td>Shadow-mode factor scoring, backtest notebook, open-source release</td><td>~$60K</td></tr>
+  </table>
+  <div class="two-col">
+    <div class="card card-warn">
+      <h3>Why not $250K / 12mo?</h3>
+      <p style="font-size: 0.9rem;">Big ask + soft team identity + speculative roadmap is the combination that gets cut apart. $180K/9mo is credible for 1.5-2 FTE.</p>
+    </div>
+    <div class="card">
+      <h3>Gate on artifacts, not prose</h3>
+      <p style="font-size: 0.9rem;">Each tranche unlocks on shipped public artifacts — not architecture documents or research claims.</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7: Overclaims to Soften -->
+<div class="slide">
+  <span class="slide-num">07</span>
+  <h2>Six Overclaims to Soften</h2>
+  <table>
+    <tr><th>Current wording</th><th>Replace with</th></tr>
+    <tr><td>"Works on any EVM asset without manual intervention"</td><td>"Targets top 30 Morpho collateral assets"</td></tr>
+    <tr><td>"Requires no manual categorisation"</td><td>"Automated via contract introspection, manual override for edge cases"</td></tr>
+    <tr><td>"Contains no hardcoded parameters"</td><td>"Core params estimated via MLE/BIC; design choices documented"</td></tr>
+    <tr><td>"Updates in real time"</td><td>"Per-block (market), 5min (liquidity), hourly (governance)"</td></tr>
+    <tr><td>"Every output is traceable"</td><td>"Designed for full traceability"</td></tr>
+    <tr><td>"Probability of default estimates" (as live)</td><td>"PD estimation is the Phase 2 research objective"</td></tr>
+  </table>
+</div>
+
+<!-- SLIDE 8: Breaking News — Chaos Labs -->
+<div class="slide">
+  <span class="slide-num">08</span>
+  <h2>Breaking: Chaos Labs Exits Aave</h2>
+  <p class="subtitle" style="margin-bottom: 1.5rem;">April 6, 2026 — Omer Goldberg announces departure after 3 years</p>
+  <div class="three-col">
+    <div>
+      <div class="big-number">$26B</div>
+      <div class="big-label">Aave TVL managed with zero bad debt</div>
+    </div>
+    <div>
+      <div class="big-number">$3M</div>
+      <div class="big-label">Budget gap ($8M asked, $5M offered)</div>
+    </div>
+    <div>
+      <div class="big-number">3yr</div>
+      <div class="big-label">Operated at negative margins</div>
+    </div>
+  </div>
+  <div class="quote" style="margin-top: 2rem;">
+    "Risk is downstream of architecture. When the architecture changes completely, the risk engagement changes completely."
+    <div class="quote-src">— Omer Goldberg, Chaos Labs</div>
+  </div>
+</div>
+
+<!-- SLIDE 9: Chaos Labs Implications -->
+<div class="slide">
+  <span class="slide-num">09</span>
+  <h2>What Chaos Labs Means for Us</h2>
+  <div class="two-col">
+    <div>
+      <h3 style="color: var(--green);">Opportunity</h3>
+      <ul>
+        <li><strong>Validates demand</strong> — $26B protocol can't retain its risk manager</li>
+        <li><strong>Political timing</strong> — Morpho governance just watched Aave implode</li>
+        <li><strong>Architecture argument</strong> — Morpho's isolated markets are stable by design; no V3→V4 risk</li>
+        <li><strong>Pitch</strong> — "Fund the commons, don't rent a vendor"</li>
+      </ul>
+    </div>
+    <div>
+      <h3 style="color: var(--red);">Warning</h3>
+      <ul>
+        <li><strong>$5M+/yr wasn't sustainable</strong> — our post-grant plan must be airtight</li>
+        <li><strong>Single-client dependency killed them</strong> — we need multiple curator buyers</li>
+        <li><strong>Governance can turn hostile</strong> — open-source the methodology so the community owns it</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 10: Prosperi Validation -->
+<div class="slide">
+  <span class="slide-num">10</span>
+  <h2>External Validation: Luca Prosperi</h2>
+  <p class="subtitle">"The Physics of On-Chain Lending" — April 6, 2026</p>
+  <div class="two-col">
+    <div>
+      <div class="card">
+        <div class="big-number" style="font-size: 2.5rem;">20-100x</div>
+        <div class="big-label" style="margin-bottom: 1rem;">underpricing of lending risk in Morpho USDC markets</div>
+        <p style="font-size: 0.9rem;">ETH at 70% LTV vs 86% LLTV → distance-to-default of <strong>0.59 sigma</strong>. Required spread: 400+ bps. Observed: 0-20 bps.</p>
+      </div>
+    </div>
+    <div>
+      <h3>Why cite this</h3>
+      <ul>
+        <li>Independent, respected voice confirms the problem is real</li>
+        <li>Uses the <strong>same Merton/Black-Cox math</strong> as Daniel's model</li>
+        <li>Published the day before our meeting — perfect timing</li>
+        <li>Converts the RFC problem section from assertion to external validation</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 11: Business Model -->
+<div class="slide">
+  <span class="slide-num">11</span>
+  <h2>Sustainability: Sell Risk Feed to Curators</h2>
+  <div class="two-col">
+    <div>
+      <table>
+        <tr><th></th><th>Public (grant)</th><th>Paid (revenue)</th></tr>
+        <tr><td>Updates</td><td>Daily</td><td>Block-by-block</td></tr>
+        <tr><td>Factor scores</td><td>Weekly</td><td>Continuous</td></tr>
+        <tr><td>PD estimates</td><td>30d, weekly</td><td>1d/7d/30d, per-block</td></tr>
+        <tr><td>Alerts</td><td>Post-incident</td><td>Real-time circuit breaker</td></tr>
+        <tr><td>API</td><td>Rate-limited</td><td>WebSocket, SLA-backed</td></tr>
+      </table>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom: 1rem;">
+        <div class="big-number" style="font-size: 2.5rem;">$200K</div>
+        <div class="big-label">ARR at 10 curators x $20K/yr</div>
+        <p style="font-size: 0.85rem; margin-top: 0.5rem;">$100M TVL curator earns $1-2M/yr in fees. A $25K risk feed is 1-2.5% of revenue.</p>
+      </div>
+      <p style="font-size: 0.9rem; color: var(--gray);">Downstream: insurance pricing for Nexus Mutual / OpenCover</p>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 12: Team -->
+<div class="slide">
+  <span class="slide-num">12</span>
+  <h2>Team: Artifacts Over Pedigree</h2>
+  <div class="two-col">
+    <div>
+      <div class="card" style="margin-bottom: 1rem;">
+        <h3>Vincent</h3>
+        <p style="font-size: 0.9rem;">DeFi Integration Graph (DIG), oracle price series, leverager contracts, 7+ protocol watchers</p>
+      </div>
+      <div class="card">
+        <h3>Amaury</h3>
+        <p style="font-size: 0.9rem;">Yield tree decomposition, archive-node pipeline, Morpho rebalancing agent (Hadjime), Spark integration</p>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom: 1rem;">
+        <h3>Daniel</h3>
+        <p style="font-size: 0.9rem;">Morpho vault curator (Hadjime USDC Prime), RFC author, treasury management, BD &amp; delegate relations</p>
+      </div>
+      <div class="card">
+        <h3>Hamza</h3>
+        <p style="font-size: 0.9rem;">Fixed-income analysis, leverage bounds, PT loop sizing, quantitative evaluation</p>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top: 1.5rem; font-size: 0.95rem; color: var(--gray);">Combined commitment: <span class="highlight">~1.5-2 FTE</span> — state explicitly in the RFC.</p>
+</div>
+
+<!-- SLIDE 13: #1 Pre-Submission Task -->
+<div class="slide">
+  <span class="slide-num">13</span>
+  <h2>Highest-Priority Task Before Submission</h2>
+  <div class="card" style="border-left-color: var(--yellow); margin-bottom: 2rem; padding: 2rem;">
+    <h3 style="font-size: 1.3rem;">Retroactive Incident Case Study</h3>
+    <p style="margin-top: 1rem;">Show — with <strong>dated onchain state</strong> and specific reads — that the existing tooling would have surfaced USD0++, xUSD, or Resolv/USR fragility <strong>before the incidents caused losses</strong>.</p>
+    <p style="margin-top: 1rem;">This single artifact converts the proposal from <span class="highlight">"fund us to build a theory"</span> to <span class="highlight">"fund us to operationalize a capability"</span>.</p>
+  </div>
+  <div class="two-col">
+    <div>
+      <h3>We have the data</h3>
+      <ul style="font-size: 0.9rem;">
+        <li>Amaury found mMEV mispricing before the oracle updated (Nov 5)</li>
+        <li>Team lived through xUSD in real time (Nov 4-5)</li>
+        <li>Archive node access for historical state</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Ideal format</h3>
+      <ul style="font-size: 0.9rem;">
+        <li>Live demo link, not a PDF</li>
+        <li>Timestamped onchain reads</li>
+        <li>Specific warnings the tool would have issued</li>
+        <li>"We caught it. Here's the proof."</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 14: Open Questions -->
+<div class="slide">
+  <span class="slide-num">14</span>
+  <h2>Open Questions for Today</h2>
+  <div class="two-col">
+    <div>
+      <h3>Daniel's questions (00:52 today)</h3>
+      <ul style="font-size: 0.9rem;">
+        <li>Team identity — "Sigma Labs"? Named individuals? Register a company?</li>
+        <li>Budget — $180K/9mo vs $250K/12mo?</li>
+        <li>Budget categories must reflect reality</li>
+      </ul>
+      <h3 style="margin-top: 1.5rem;">Competitive</h3>
+      <ul style="font-size: 0.9rem;">
+        <li>Odyssey Digital AM — what did Amaury learn from the call? Do we accelerate?</li>
+        <li>Do not mention Odyssey in the RFC</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Additional</h3>
+      <ul style="font-size: 0.9rem;">
+        <li>How much model math stays in main RFC vs appendix?</li>
+        <li>Who builds the retroactive case study? Which incident?</li>
+        <li>Cite Prosperi — do we reach out to Luca directly?</li>
+        <li>Reference Chaos Labs / Aave situation in the RFC?</li>
+        <li>Public-good argument — where exactly on page 1?</li>
+        <li>Credora — who writes the 3-sentence version?</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
