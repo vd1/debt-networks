@@ -11,6 +11,7 @@ Usage:
   send_tg_message.py '<message>'                        # send standalone
   send_tg_message.py '<message>' --reply '<search text>' # reply to a message containing <search text>
   send_tg_message.py '<message>' --reply-id <msg_id>     # reply to a specific message ID
+  send_tg_message.py '<message>' --file <path>           # send as a caption on an attached file
 """
 
 import asyncio
@@ -37,6 +38,7 @@ def parse_args():
     message = args[0]
     reply_search = None
     reply_id = None
+    file_path = None
 
     i = 1
     while i < len(args):
@@ -46,12 +48,15 @@ def parse_args():
         elif args[i] == "--reply-id" and i + 1 < len(args):
             reply_id = int(args[i + 1])
             i += 2
+        elif args[i] == "--file" and i + 1 < len(args):
+            file_path = args[i + 1]
+            i += 2
         else:
             # Legacy: second positional arg = reply search text
             reply_search = args[i]
             i += 1
 
-    return message, reply_search, reply_id
+    return message, reply_search, reply_id, file_path
 
 
 async def main():
@@ -59,7 +64,7 @@ async def main():
         print("Set TELEGRAM_API_ID and TELEGRAM_API_HASH")
         sys.exit(1)
 
-    message, reply_search, reply_id = parse_args()
+    message, reply_search, reply_id, file_path = parse_args()
 
     client = TelegramClient(SESSION_FILE, int(API_ID), API_HASH)
     await client.connect()
@@ -89,8 +94,13 @@ async def main():
         if not reply_id:
             print(f"No message found containing '{reply_search}'. Sending standalone.")
 
-    await client.send_message(target.id, message, reply_to=reply_id)
-    print(f"Message sent to '{CHAT_NAME}'" + (f" (reply to {reply_id})" if reply_id else ""))
+    if file_path:
+        await client.send_file(target.id, file_path, caption=message, reply_to=reply_id)
+        suffix = f" with file {file_path}"
+    else:
+        await client.send_message(target.id, message, reply_to=reply_id)
+        suffix = ""
+    print(f"Message sent to '{CHAT_NAME}'" + suffix + (f" (reply to {reply_id})" if reply_id else ""))
     await client.disconnect()
 
 
