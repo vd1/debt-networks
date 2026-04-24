@@ -33,17 +33,21 @@ Wrapped Savings rUSD (wsrUSD) [4626] | rate: 1.074463
 
 What this surfaces immediately: 85.8% BTC concentration across two custodians (Coinbase, BitGo); 86% LLTV with a 14% buffer before liquidation cascades; 4–5 layers of recursive smart contract risk; a reflexivity loop where wsrUSD collateralises its own backing vault at 94% LLTV; and a base APY of ~1.89% that is inadequate compensation for this structural complexity. This output was produced by our **Dependency Graph Engine (DIG)** and **Yield Tree Decomposition (YTD)**, two operational tools running on live blockchain state. The full decomposition is in the Evidence Appendix.
 
+> **[insert]** DIG = DeFi Integration graph
+
 This is an observability layer Morpho currently lacks. This RFC proposes to build the full risk infrastructure stack on top of it.
 
 ### The Morpho Curationship Model and Its Promise
 
 Morpho has redefined lending protocol design by separating infrastructure from risk management. Anyone can now spin up an ERC-4626 vault in a few clicks, define collateral exposure, set supply caps, choose oracles, and offer curated lending strategies to depositors. The protocol provides the rails; the curator provides the judgment.
 
+> **[insert]** plus one can open a Morpho market where the vault's token (eg syrupUSDT, siUSD, etc) is collateral
+
 The closest analogy in traditional finance is an asset manager: both set strategy and manage risk, but vault curators operate non-custodially. Execution is automated through smart contracts, and users can deposit and withdraw at will without anyone being able to prevent it.
 
 The model's appeal is real. But its rapid expansion has exposed a structural gap: **the rigor of collateral risk assessment varies enormously across curators, and depositors have consistently lacked the tools to evaluate it**.
 
-This gap is not a matter of opinion. Independent research published in April 2026 by Luca Prosperi (*Physics of On-Chain Lending*) documented 20–100x mispricing of collateral risk across major DeFi lending markets. Risk analytics firm Chaos Labs, in its post-mortem of the Resolv/USR exploit, documented the same structural failure: hardcoded oracles, unchecked minting roles, and leverage loops that were all readable from public blockchain state before any damage occurred. The problem is architectural, not incidental, and it recurs because no shared framework exists to read the onchain signals systematically.
+This gap is not a matter of opinion. Independent research published in April 2026 by Luca Prosperi ([*Physics of On-Chain Lending*](https://dirtroads.substack.com/p/68-the-physics-of-on-chain-lending)) documented 20–100x mispricing of collateral risk across major DeFi lending markets. Risk analytics firm Chaos Labs, in its post-mortem of the Resolv/USR exploit, documented the same structural failure: hardcoded oracles, unchecked minting roles, and leverage loops that were all readable from public blockchain state before any damage occurred. The problem is architectural, not incidental, and it recurs because no shared framework exists to read the onchain signals systematically.
 
 
 
