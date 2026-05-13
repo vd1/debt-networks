@@ -1,0 +1,990 @@
+\documentclass[12pt,oneside]{article}
+\frenchspacing
+\usepackage{ulem}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{enumitem}
+
+\usepackage{amssymb}
+\usepackage{amsmath}
+
+\usepackage[utf8]{inputenc}
+
+\usepackage{newunicodechar}
+\newunicodechar{→}{\ensuremath{\rightarrow}}
+\newunicodechar{≤}{\ensuremath{\leq}}
+\newunicodechar{≥}{\ensuremath{\geq}}
+
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+}
+
+\usepackage{geometry}
+\geometry{margin=1in}
+
+% Local extraction from /Users/V/icd/sty/vmacros.sty.
+% The manuscript only uses \ttt from that file.
+\newcommand{\ttt}{\texttt}
+
+\title{Short circuits in vault networks (wash lending)}
+\author{QuantFi}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+A vault that lends against its own shares creates an interest-rebate
+loop: borrowers pay interest to the vault, then recover part of that
+interest through their vault shares.  This lowers their effective borrow
+cost, creates self-reinforcing leverage, and can make borrower demand
+non-monotone in the borrow rate.  The note derives the mechanism first
+in a two-player example, then in a heterogeneous-borrower equilibrium,
+and closes with a tranche interpretation of the resulting risk transfer.
+\end{abstract}
+
+We are given a vault $V$ where players can deposit a stable $S$ (e.g.\ USDC) 
+for a share token $X$ (e.g.\ syrupUSDC).
+The vault's strategy is to direct the $S$s it receives to two venues:
+\begin{itemize}
+  \item half goes to another vault $L$ that generates $s = 8\%$ APY (e.g.\ a leveraged carry position on LSTs)
+  \item half goes into an $X/S$ lending market $M$ where people can deposit-$X$-and-borrow-$S$ at $b = 3\%$ borrow rate
+\end{itemize}
+
+Now suppose the following scenario with two players $P_1$ and $P_2$.
+Start with an empty vault.
+
+\subsection*{Step 1}
+
+\begin{itemize}
+  \item $P_1$ deposits 100 $S$ in $V$ for 100 $X$
+  \item $P_2$ deposits 100 $S$ in $V$ for 100 $X$
+  \item $V$ posts 100 $S$ on $M$
+  \item $V$ posts 100 $S$ on $L$
+\end{itemize}
+
+Positions:
+\begin{align*}
+  P_1 &= 100\; X \\
+  P_2 &= 100\; X \\
+  V   &= 100\; S \text{ (0 lent) on } M@3\% \;+\; 100\; S \text{ on } L@8\%
+\end{align*}
+
+Yields:
+\begin{align*}
+  \text{yield}(V) \text{ on } L &= 100 \times 0.08 = 8 \\
+  \text{yield}(V) \text{ on } M &= 0 \times 0.03 = 0 \\
+  \text{yield}(V) &= 8 \\
+  \text{yield}(P_1) &= \tfrac{1}{2} \times 8 = 4 \\
+  \text{yield}(P_2) &= \tfrac{1}{2} \times 8 = 4
+\end{align*}
+
+\subsection*{Step 2}
+
+\begin{itemize}
+  \item $P_2$ deposits 100 $X$ as collateral on $M$
+  \item $P_2$ borrows 60 $S$ on $M$ \emph{(entirely provided by $V$)}
+  \item $P_2$ deposits 60 $S$ in $V$ for 60 $X$
+  \item $V$ posts 30 $S$ on $M$
+  \item $V$ posts 30 $S$ on $L$
+\end{itemize}
+
+Positions:
+\begin{align*}
+  P_1 &= 100\; X \\
+  P_2 &= 160\; X - 60\; S \\
+  V   &= 130\; S \text{ (60 lent) on } M@3\% \;+\; 130\; S \text{ on } L@8\%
+\end{align*}
+
+Yields:
+\begin{align*}
+  \text{yield}(V) \text{ on } L &= 130 \times 0.08 = 10.4 \quad \text{(\emph{external yield})} \\
+  \text{yield}(V) \text{ on } M &= 60 \times 0.03 = 1.8 \\
+  \text{yield}(V) &= 12.2 \\
+  \text{yield}(P_1) &= \tfrac{100}{260} \times 12.2 = 4.69 \\
+  \text{yield}(P_2) &= \tfrac{160}{260} \times 12.2 - 1.8 = 5.71
+\end{align*}
+
+At that stage we can make a number of remarks:
+\begin{itemize}
+  \item If $V$'s strategy was to put everything on $L$ at step~1, $\text{yield}(V) = 200 \times 0.08 = 16$, so $V$ is leaving money on the table.
+  \item By looping its position, $P_2$ gets a higher share of the common yield, i.e.\ $\text{yield}(P_1) < \text{yield}(P_2)$.
+  \item $P_2$ has changed that somewhat, now $V$ is putting $+30$ on $L$.
+  \item $P_2$ pays 1.8 to borrow but gets back $\frac{16}{26}$ of that, so effective $b_{\text{eff}} = 1.15\% < b$ paid to the rest of the players $P_1$.
+  \item $\text{totalX}_{\text{in}V}/\text{totalS}_{\text{in}V} = 260/260 = 1$.
+  \item $\text{yield}(V) > \text{yield}(P_1) + \text{yield}(P_2) = \text{external yield } 10.4$, which equals the external $L$ yield; the 1.8 from $M$ is an internal transfer from $P_2$ to all players.
+  \item $P_2$ has more risk (liquidation), so one can see the premium as a reward for that risk.
+  \item Withdrawals from $V$ are fine as long as $M$ is liquid: right now $P_1$ can exit because $V$ has 200 instant $S$ at disposal, if $P_1$ leaves\ldots
+\end{itemize}
+
+\subsection*{Step 3}
+
+\begin{itemize}
+  \item $P_1$ withdraws 100 $X$
+  \item $V$ pulls 50 $S$ from $M$
+  \item $V$ pulls 50 $S$ from $L$
+\end{itemize}
+
+Positions:
+\begin{align*}
+  P_1 &= 0\; X \\
+  P_2 &= 160\; X - 60\; S \\
+  V   &= 80\; S \text{ (60 lent) on } M@3\% \;+\; 80\; S \text{ on } L@8\%
+\end{align*}
+
+Yields:
+\begin{align*}
+  \text{yield}(V) \text{ on } L &= 80 \times 0.08 = 6.4 \\
+  \text{yield}(V) \text{ on } M &= 60 \times 0.03 = 1.8 \quad \text{(\emph{assuming constant rate})} \\
+  \text{yield}(V) &= 8.2 \\
+  \text{yield}(P_1) &= 0 \\
+  \text{yield}(P_2) &= \tfrac{160}{160} \times 8.2 - 1.8 = 6.4
+\end{align*}
+
+Note that $P_2$'s LTV $y_2/x_2$ is unchanged.
+
+%% ----------------------------------------------------------------
+\section{Second attempt}
+
+Assume fractions $\varepsilon + \varepsilon' = 1$.
+Let rates be $b$ (borrow on $M$) and $s$ (APY on $L$).
+
+\subsection*{Step 1}
+
+\begin{itemize}
+  \item $P_1$ deposits $x_1$ $S$ in $V$ for $x_1$ shares $X$
+  \item $P_2$ deposits $x_2$ $S$ in $V$ for $x_2$ shares $X$
+  \item $V$ posts $\varepsilon(x_1+x_2)$ $S$ on $L$@$s$
+  \item $V$ posts $\varepsilon'(x_1+x_2)$ $S$ on $M$@$b$
+\end{itemize}
+
+Yields:
+\begin{align*}
+  \text{yield}(V) \text{ on } L &= s\varepsilon(x_1+x_2) \\
+  \text{yield}(P_1) &= x_1 s\varepsilon \\
+  \text{yield}(P_2) &= x_2 s\varepsilon
+\end{align*}
+
+\subsection*{Step 2}
+
+\begin{itemize}
+  \item $P_2$ posts $x_2$ $X$ as collateral in $M$
+  \item $P_2$ borrows $y_2 < \varepsilon'(x_1+x_2)$ on $M$ (liquidity constraint; also needs $y_2/x_2$ lower than maxLTV)
+  \item $P_2$ deposits $y_2$ $S$ in $V$ for $y_2$ $X$ (or has the rate changed?)
+  \item $V$ posts $\varepsilon y_2$ $S$ on $L$@$s$
+  \item $V$ posts $\varepsilon' y_2$ $S$ on $M$@$b$
+\end{itemize}
+
+Yields: write $T = x_1 + x_2 + y_2$ for the amount of $S$ in $V$ after step 2.
+\begin{align*}
+  \text{yield}(V) &= s\varepsilon T + b\, y_2 \\
+  \text{yield}(P_1) &= \frac{x_1}{T}\bigl(s\varepsilon T + b\, y_2\bigr) \\
+  \text{yield}(P_2) &= \frac{x_2+y_2}{T}\bigl(s\varepsilon T + b\, y_2\bigr) - b\, y_2
+    = (x_2+y_2)\,s\varepsilon - b_{\text{eff}}\, y_2
+\end{align*}
+with:
+\[
+  b_{\text{eff}} = \frac{x_1}{T}\, b
+\]
+the effective rate at which $P_2$ is borrowing.
+
+\medskip\noindent
+Players' net equals external yield:
+\[
+  \text{yield}(P_1) + \text{yield}(P_2) = s\varepsilon T
+\]
+
+\noindent
+Players' incremental gains from looping $y_2$ (vs.\ no loop):
+\begin{align*}
+  \Delta_1 &= \frac{x_1}{T}\bigl(s\varepsilon T + b\, y_2\bigr) - x_1 s\varepsilon
+            = \frac{x_1}{T}\, b\, y_2 \geq 0 \\
+  \Delta_2 &= (x_2+y_2)\,s\varepsilon - \frac{x_1}{T}\, b\, y_2 - x_2 s\varepsilon
+            = y_2\Bigl(s\varepsilon - \frac{x_1}{T}\, b\Bigr)
+\end{align*}
+
+The loop is attractive to $P_2$ if $\varepsilon s > \frac{x_1}{T}\, b$. It may be that $s < b$ (no carry) and yet $\varepsilon s > \frac{x_1}{T}\, b$ (some 
+notion of effective carry).
+
+\subsection*{Step 3}
+
+\begin{itemize}
+  \item $P_1$ pushes $y_1$ $S$ from $V$ with $y_1 \in [-x_1, +\infty)$
+  \item $V$ pushes $\varepsilon y_1$ to $L$
+  \item $V$ pushes $\varepsilon' y_1$ to $M$
+\end{itemize}
+
+Yields: write $T' = x_1 + y_1 + x_2 + y_2$ for the new amount of $S$ in $V$.
+\begin{align*}
+  \text{yield}(V) &= s\varepsilon T' + b\, y_2 \\
+  \text{yield}(P_1) &= \frac{x_1+y_1}{T'}\bigl(s\varepsilon T' + b\, y_2\bigr) \\
+  \text{yield}(P_2) &= \frac{x_2+y_2}{T'}\bigl(s\varepsilon T' + b\, y_2\bigr) - b\, y_2
+    = (x_2+y_2)\,s\varepsilon - \frac{x_1+y_1}{T'}\, b\, y_2
+\end{align*}
+
+If $P_1$ withdraws everything, $x_1+y_1=0$ and $\text{yield}(P_2) = (x_2+y_2)\,s\varepsilon$, so the effective borrowing rate drops to zero (in which case $P_2$ can redirect the vault allocation to $L$ without $V$ noticing, so to speak---$P_2$ is a rate maker). If to the contrary $P_1$ takes a very large position, $P_2$ is negligible and its rate goes to $b$ ($P_2$ is rate taker).
+
+%% ----------------------------------------------------------------
+\section{Heterogeneous borrowers with fixed loanable supply}
+
+We now place the wash-lending loop of the previous section inside the
+borrower equilibrium framework of
+\texttt{morpho\_borrower\_equilibrium.tex}.  There are $n$ borrowers,
+each characterised by equity $e_i$, maximum multiplier $M_i$
+(risk tolerance), and minimum acceptable APY $a_i$.  Write
+$E = \sum_{j=1}^n e_j$ for total equity.
+
+The vault $V$ allocates fraction $\varepsilon$ to external yield $L$
+at rate $s$ and fraction $\varepsilon' = 1-\varepsilon$ to market $M$.
+
+$\blacktriangleright$ The loanable supply on $M$ is fixed at $\bar S$.
+
+\subsection*{The loop}
+
+Borrower $i$ deposits $e_i$ of $S$ in $V$ for $e_i$ shares $X$, posts
+$X$ as collateral in $M$, borrows $y_i = m_i e_i$ of $S$, and
+re-deposits in $V$.  After all loops:
+\[
+  T = E + Y, \qquad Y = \sum_j m_j e_j, \qquad
+  \varphi = \frac{Y}{T}.
+\]
+
+\subsection*{Modified APY}
+
+Vault income is $s\varepsilon T + rY$.  Borrower $i$'s pro-rata share
+of vault income minus interest cost gives APY on equity:
+\[
+  A_i
+  = (1+m_i)\,s\varepsilon + r\,\frac{Y - m_i E}{E+Y}
+  = \underbrace{(s\varepsilon + r\varphi)}_{c_v}
+    + m_i\underbrace{\bigl(s\varepsilon - r(1-\varphi)\bigr)}_{\Delta_v}.
+\]
+This has the Morpho form $A = c + m\Delta$, but both the collateral
+yield $c_v = s\varepsilon + r\varphi$ and the carry
+$\Delta_v = s\varepsilon - r_{\mathrm{eff}}$ are \emph{endogenous}:
+they depend on the borrow rate $r$ and aggregate debt $Y$ through
+\[
+  r_{\mathrm{eff}} = r(1-\varphi) = \frac{rE}{E+Y}.
+\]
+This is the effective borrow cost after the vault rebate (cf.\
+$b_{\mathrm{eff}} = \frac{x_1}{T}\,b$ from Section~2).
+
+\subsection*{Bang-bang}
+
+Since $A_i$ is linear in $m_i$, the price-taking optimum is still
+bang-bang: $m_i = M_i$ if $A_i(M_i) \ge a_i$, else $m_i = 0$.
+
+\subsection*{Participation condition (at $Y = \bar S$)}
+
+Assume the market clears: $Y = \bar S$, so $T = E + \bar S$ and
+$\varphi = \bar S/(E+\bar S)$.  The condition
+$A_i(M_i) \ge a_i$ becomes
+\[
+  s\varepsilon(1+M_i) + r\,\frac{\bar S - M_i E}{E+\bar S}
+  \;\ge\; a_i.
+\]
+Define $\beta_i := (\bar S - M_i E)/(E+\bar S)$ and
+$\delta_i := a_i - s\varepsilon(1+M_i)$.  The sign of $\beta_i$
+(equivalently, whether $M_i \lessgtr \bar S/E$) partitions borrowers
+into four types:
+
+\medskip
+\begin{center}
+\begin{tabular}{llll}
+\textbf{Type} & \textbf{Condition} & \textbf{Rate sensitivity}
+  & \textbf{Threshold} \\[4pt]
+A & $M_i < \bar S/E$, $\delta_i \le 0$
+  & always active; higher $r$ helps & --- \\
+B & $M_i < \bar S/E$, $\delta_i > 0$
+  & active iff $r \ge \tilde r_i := \delta_i/\beta_i$
+  & floor rate \\
+C & $M_i > \bar S/E$, $\delta_i \le 0$
+  & active iff $r \le \tilde\rho_i := -\delta_i/(-\beta_i)$
+  & ceiling rate \\
+D & $M_i > \bar S/E$, $\delta_i > 0$
+  & never active & ---
+\end{tabular}
+\end{center}
+
+\medskip\noindent
+The boundary $M_i = \bar S/E$ is the \emph{rate-neutral} multiplier:
+at that leverage, the borrower recaptures exactly the interest it pays
+through the vault.
+
+\subsection*{Demand curve}
+
+Aggregate demand at rate $r$:
+\[
+  D(r) = \underbrace{\sum_{i \in A} e_i M_i}_{D_A}
+       + \underbrace{\sum_{\substack{i \in B \\ r \ge \tilde r_i}}
+           e_i M_i}_{D_B(r)}
+       + \underbrace{\sum_{\substack{i \in C \\ r \le \tilde\rho_i}}
+           e_i M_i}_{D_C(r)}.
+\]
+$D_B(r)$ is a step function that \emph{increases} in $r$ (rate-seekers
+join); $D_C(r)$ is a step function that \emph{decreases} in $r$
+(standard Morpho exit).  Therefore $D(r)$ is generically
+\textbf{non-monotone}.
+
+\subsection*{Equilibrium}
+
+The clearing rate $r^*$ satisfies $D(r^*) = \bar S$, with the marginal
+borrower partially filled if $D$ jumps over $\bar S$ at a step.  Three
+regimes:
+
+\begin{enumerate}
+  \item $D(0) > \bar S$: excess demand at $r=0$ from Types A+C.
+    The rate rises, Type~C borrowers exit.  Clearing lies among
+    Type~C thresholds $\tilde\rho_i$ (standard regime).
+  \item $D(0) < \bar S < D(\infty)$: insufficient demand at low rates.
+    The rate must \emph{rise} to attract Type~B demand.  Clearing
+    lies among Type~B thresholds $\tilde r_i$ (inverted regime).
+  \item The upward (B) and downward (C) steps interleave: $D(r)$
+    crosses $\bar S$ at multiple values of $r$.  \textbf{Multiple
+    equilibria} are possible.
+\end{enumerate}
+
+\subsection*{Qualitative differences from the standard model}
+
+\begin{enumerate}
+  \item \textbf{Self-reinforcing leverage.}  As $Y$ rises, $\varphi$
+    rises, $r_{\mathrm{eff}}$ falls.  Each borrower's entry makes
+    others more profitable---a positive externality absent from the
+    standard model.
+
+  \item \textbf{Inverted rate sensitivity.}  Modest-leverage borrowers
+    ($M_i < \bar S/E$) are \emph{better off} when rates are high,
+    because they recapture more interest through the vault than they
+    pay.
+
+  \item \textbf{Multiple equilibria.}  The fixed-point
+    $Y^* = G(Y^*)$, where $G$ maps aggregate debt to consistent
+    demand, can have multiple crossings.  A high-$Y$ equilibrium
+    with strong rebate can coexist with a low-$Y$ equilibrium with
+    weak rebate.
+
+  \item \textbf{Amplified predatory entry.}  From
+    \texttt{morpho\_borrower\_equilibrium.tex} \S4: a large entrant
+    profits from knocking out incumbents (their exit reduces aggregate
+    debt, lowering the terminal rate).  In the wash-lending version
+    this compounds: the entrant's debt also increases $\varphi$,
+    boosting the vault rebate.  The APY gain from a cascade of $k$
+    exits is
+    \[
+      A_0^{(k)} - \hat A_0
+      = m_0\kappa\sum_{i=1}^k d_i
+        + (1+m_0)\,r^*\,
+          \frac{Y_{\mathrm{post}} - Y_{\mathrm{pre}}}
+               {(E+Y_{\mathrm{post}})(E+Y_{\mathrm{pre}})}\,E,
+    \]
+    where the first term is the standard rate-relief channel (linear
+    model, $r(Y) = r_b + \kappa Y$) and the second is the rebate
+    channel from the vault loop.
+\end{enumerate}
+
+\subsection*{Application to the Resolv USR incident}
+
+USR is the stable $S$; the Resolv vault is $V$; the compromised mint
+authority is equivalent to an unbounded shock $\varepsilon' \to 1$,
+redirecting all backing to lending with $s\varepsilon \to 0$.  In that
+limit the carry inverts:
+\[
+  \Delta_v = s\varepsilon - r_{\mathrm{eff}}
+  \;\longrightarrow\; -r_{\mathrm{eff}} < 0.
+\]
+Every borrower faces negative carry; the bang-bang optimum flips from
+$m_i = M_i$ to $m_i = 0$.  The self-reinforcing leverage that
+sustained the high-$Y$ equilibrium becomes a self-reinforcing
+\emph{unwind}: each exit reduces $\varphi$, raising $r_{\mathrm{eff}}$
+for survivors, knocking out the next marginal borrower.  The cascade
+terminates only when $Y = 0$ (full deleveraging) or when the rate
+drops to a level consistent with the remaining active set---but with
+$s\varepsilon = 0$ no such interior fixed point exists.
+
+This is the blast radius of a mint-authority compromise expressed in
+the borrower equilibrium language: the entire active set is expelled
+in a single cascade, and the welfare loss equals
+$\sum_{i=1}^n e_i\bigl[c_v + M_i \Delta_v\bigr]$ evaluated at the
+pre-hack equilibrium.
+
+\subsection*{Implicit tranching}
+
+The wash-lending equilibrium admits a structured-finance interpretation
+that clarifies the risk allocation.  Partition participants into two
+roles:
+
+\begin{itemize}
+  \item \textbf{Senior tranche (lenders).}  Players who deposit $S$ in
+    $V$ but do \emph{not} loop.  Their yield is $s\varepsilon$---the
+    vault's external rate, independent of the borrow market.  They bear
+    no liquidation risk and are first in line for the vault's assets.
+
+  \item \textbf{Junior tranche (loopers).}  Players who loop $S$ back
+    through $M$.  Their yield is $c_v + M_i \Delta_v$, which exceeds
+    the senior yield when $\Delta_v > 0$ (positive carry) but falls
+    below it---and can go negative---when rates spike or the backing
+    collapses.  They are levered, bear liquidation risk, and absorb
+    first losses.
+\end{itemize}
+
+The borrow rate $r^*$ is the endogenous price of risk transfer between
+the two tranches: it determines both the senior coupon
+$s\varepsilon + r^*\varphi$ (boosted by interest income) and the junior
+spread $\Delta_v = s\varepsilon - r^*(1-\varphi)$.
+
+\medskip\noindent
+\textbf{Bifurcation of the tranche split.}  The multiple equilibria
+from the clearing analysis above acquire a direct structural
+interpretation: at the \emph{same} pool configuration (same $E$,
+same $\bar S$, same borrower population), the market can settle into
+
+\begin{enumerate}
+  \item a \textbf{thin junior} equilibrium: low $Y$, weak rebate,
+    high effective borrow cost $r_{\mathrm{eff}}$---only the most
+    risk-tolerant borrowers lever up, and most capital sits in the
+    senior tranche earning $\approx s\varepsilon$;
+
+  \item a \textbf{thick junior} equilibrium: high $Y$, strong rebate,
+    low $r_{\mathrm{eff}}$---the self-reinforcing leverage channel
+    pulls in modest-leverage borrowers (Type~B), the junior tranche
+    dominates the capital structure, and the senior tranche earns a
+    higher coupon from the large interest flow.
+\end{enumerate}
+
+\noindent
+The transition between these states is discontinuous: a small shock to
+$\bar S$ or $s$ can flip the pool from one regime to the other,
+producing a sudden reallocation of risk that looks like a run on the
+junior tranche (borrowers exit en masse) or a leverage spiral (new
+borrowers pile in).
+
+\medskip\noindent
+\textbf{Comparison with traditional CDOs.}  In a standard CDO the
+tranche boundaries (attachment/detachment points) are fixed at
+issuance.  Here they are \emph{endogenous}: the size of the junior
+tranche ($Y$) and its compensation ($\Delta_v$) are equilibrium
+objects determined by the borrower population and the vault's
+allocation rule $\varepsilon/\varepsilon'$.  Governance changes to
+$\varepsilon$ (e.g.\ Sky adjusting the DSR or the Spark allocation)
+are analogous to restructuring the waterfall mid-life---something
+impossible in traditional structured finance but routine in DeFi.
+
+\medskip\noindent
+\textbf{Application.}  Spark/Sky is the canonical example:
+DAI lenders are senior (yield = DSR $\approx s$), DAI
+borrowers who loop through Spark are junior (leveraged carry on
+collateral yield minus effective borrow cost).  The DSR is the
+governance lever that reprices the tranche split---raising it
+simultaneously increases senior yield and compresses junior carry,
+potentially triggering the thin-junior equilibrium.
+
+\subsection*{Tranche attachment points}
+
+The analogy with structured finance becomes quantitative once we
+compute the collateral-loss threshold at which junior is wiped out and
+losses begin hitting senior.
+
+\medskip\noindent
+\textbf{Setup.}  At equilibrium the junior tranche (loopers) holds
+aggregate collateral value
+\[
+  X_J = \sum_{i \in \text{active}} (1+M_i)\,e_i = E_J + Y,
+\]
+where $E_J = \sum_{\text{active}} e_i$ is junior equity and $Y = \bar S$
+is total debt.  The senior tranche holds $E_S = E - E_J$ (non-looping
+deposits).  Total vault assets are $T = E + Y$ in $S$-terms, backed by
+collateral worth $X_J$ at current prices plus the vault's external
+position $\varepsilon T$ on $L$.
+
+\medskip\noindent
+\textbf{Collateral shock.}  Suppose the collateral price $p_X$ drops
+by a fraction $\delta$, so collateral is worth $(1-\delta)\,X_J$.
+Borrower $i$ is liquidated when their LTV exceeds the liquidation
+threshold $\ell$:
+\[
+  \frac{m_i\,e_i}{(1-\delta)(1+m_i)\,e_i} > \ell
+  \qquad\Longleftrightarrow\qquad
+  \delta > 1 - \frac{m_i}{\ell\,(1+m_i)}.
+\]
+Define the \emph{individual liquidation threshold}
+\[
+  \delta_i^* := 1 - \frac{m_i}{\ell\,(1+m_i)}
+  = 1 - \frac{M_i}{\ell\,(1+M_i)}
+\]
+(using $m_i = M_i$ at the bang-bang equilibrium).  Borrowers with
+higher leverage are liquidated first: $\delta_i^*$ is decreasing in
+$M_i$.
+
+\medskip\noindent
+\textbf{Junior wipeout (attachment point).}  As $\delta$ increases
+past each $\delta_i^*$, the corresponding borrower is liquidated.
+If liquidation recovers $(1-\delta)(1+M_i)\,e_i$ against debt
+$M_i\,e_i$, the shortfall per borrower is
+\[
+  L_i(\delta) = \max\bigl(0,\; M_i\,e_i - (1-\delta)(1+M_i)\,e_i\bigr)
+  = e_i\,\max\bigl(0,\; \delta(1+M_i) - 1\bigr).
+\]
+The junior tranche absorbs losses up to its total equity $E_J$.
+The \textbf{attachment point} $\delta_A$ is the smallest shock at
+which cumulative losses exhaust junior equity:
+\[
+  \sum_{i \in \text{active}} L_i(\delta_A) = E_J.
+\]
+For $\delta > \delta_A$, losses spill into the senior tranche (vault
+depositors who did not loop).
+
+\medskip\noindent
+\textbf{Closed form (homogeneous case).}  If all active borrowers
+have the same multiplier $M$, then $E_J = Y/M$, $X_J = (1+M)\,E_J$,
+and the attachment point simplifies to
+\[
+  \boxed{\delta_A = \frac{1}{1+M}\,\bigl(1 + M\,(1-\ell)\bigr)
+  = 1 - \frac{M\,\ell}{1+M}.}
+\]
+At Spark-like parameters ($\ell = 0.83$, $M = 4$):
+$\delta_A = 1 - \frac{4 \times 0.83}{5} = 1 - 0.664 = 0.336$,
+meaning a 33.6\% collateral drop wipes out junior.  At Morpho's
+high-LLTV regime ($\ell = 0.945$, $M = 15$):
+$\delta_A = 1 - \frac{15 \times 0.945}{16} = 1 - 0.886 = 0.114$,
+only 11.4\%.
+
+\medskip\noindent
+\textbf{Detachment point.}  The \textbf{detachment point} $\delta_D$
+is the shock at which total vault losses equal $E_J + E_S = E$
+(both tranches wiped, only debt remains).  In the homogeneous case:
+\[
+  \delta_D = 1.
+\]
+Since collateral can't go below zero, $\delta_D = 1$ always---but the
+senior tranche's loss grows linearly for $\delta \in [\delta_A, 1]$.
+
+\medskip\noindent
+\textbf{Endogenous attachment.}  Unlike a fixed CDO, $\delta_A$
+depends on the equilibrium leverage $M^*$ (or the distribution of
+$M_i$'s in the heterogeneous case), which itself depends on $\bar S$,
+$s$, $\varepsilon$, and the borrower population.  A governance change
+that shifts the equilibrium from thin-junior to thick-junior
+\emph{simultaneously lowers the attachment point}---more leverage
+means the loss-absorption buffer shrinks.  This is the quantitative
+content of the ``endogenous CDO'' analogy: the waterfall reshapes
+itself in response to market conditions and governance actions.
+
+\medskip\noindent
+\textbf{Volatility-adjusted loss probability.}  If collateral returns
+are normally distributed with annualized volatility $\sigma$ and the
+position horizon is $\tau$ (e.g.\ the time to liquidation oracle
+update), the probability of hitting the attachment point is
+\[
+  \Pr[\delta > \delta_A]
+  = \Phi\!\left(\frac{-\delta_A}{\sigma\sqrt{\tau}}\right),
+\]
+where $\Phi$ is the standard normal CDF.  
+
+For ETH ($\sigma \approx
+0.80$) over a 1-day horizon ($\tau = 1/365$), the probability of
+a 33.6\% drop is negligible; over a 7-day horizon it is still small
+but non-trivial for tail events.
+
+\medskip\noindent
+\textbf{Choice of horizon $\tau$.}
+The horizon $\tau$ should reflect the lender's \emph{worst-case time to
+exit} under the stress scenario being priced: $\tau = \tau_{\mathrm{detect}}
++ \tau_{\mathrm{exit}}$, where $\tau_{\mathrm{detect}}$ is the delay
+before the lender recognises the drawdown, and $\tau_{\mathrm{exit}}$ is
+the time needed to withdraw supply from the pool.
+On Morpho Blue, $\tau_{\mathrm{exit}}$ depends on available liquidity:
+if utilisation is high, only a small fraction of supply can be redeemed
+instantly, and a depeg event triggers correlated withdrawals that
+further reduce liquidity---a bank-run dynamic that makes
+$\tau_{\mathrm{exit}}$ \emph{endogenous} to the crisis.
+Crucially, the sensitivity of the fair spread to $\tau$ is highly
+nonlinear and market-dependent.  For thick-buffer markets ($\delta_A
+\gtrsim 50\%$, e.g.\ ETH/BTC-collateral pools), increasing $\tau$
+from 7 to 30\,days barely moves the breach probability, because
+$\delta_A/(\sigma\sqrt{\tau})$ remains deep in the tail.  For
+thin-buffer stablecoin loops ($\delta_A \approx 5$--$15\%$), the same
+change can push the breach probability from negligible to order-one,
+causing the fair spread to explode.  A single global $\tau$ therefore
+masks systematic underpricing of the most fragile markets; the
+disciplined approach is to assign a per-market or per-asset-class
+horizon---e.g.\ $\tau = 7\,\text{d}$ for liquid crypto-collateral
+pools and $\tau = 30\,\text{d}$ for stablecoin loops where exit
+liquidity evaporates precisely when it is most needed.
+
+The companion script
+\texttt{wash\_tranche.py} plots the full waterfall and loss
+distributions for various parameter regimes.
+
+\begin{figure}[t]
+  \centering
+\includegraphics[width=\linewidth]{wash_tranche.png}
+\caption{\label{fig:wash_tranche}
+Loss waterfall and attachment-point sensitivity from \ttt{wash\_tranche.py}.
+Left: junior absorbs losses until $\delta=\delta_A$, senior breaches thereafter.
+Center: attachment point versus leverage across Spark/Maker-style LLTV regimes.
+Right: senior-loss probability under ETH-like volatility ($\sigma=80\%$).}
+\end{figure}
+
+
+%% ----------------------------------------------------------------
+\section{About Paul's tweet}
+
+I would separate the analysis in two separate sections.
+
+Suppose the LLTV of a market $B/A$ (collateral $B$, loanable $A$) is 0.945. One can take a position with collateral deposit $(M+1)x$ and borrow amount $Mx$, both counted in USD value (according to the oracle), as long as
+\[
+  M \leq \frac{\text{LLTV}}{1 - \text{LLTV}} \approx 17.2.
+\]
+Suppose we take $M = 15$. Then the ratio $\text{borrowAmount}/\text{positionValue} = Mx/x = 15$; we can call this leverage (even if some reserve the term for $M+1$); leverage zero corresponds to just depositing collateral, no borrow.
+
+Now we can define TVL as AmountCollateralSupplied, and not subtract the amount borrowed.
+With that convention, taking the position increases the TVL by $(M+1)x = 16x$. If you have 1M you can inflate the TVL by 16M.
+
+We can also define TVL as $\text{AmountCollateralSupplied} + \text{AmountLoanableLent} = (2M+1)x$, in our case $= 31x$.
+
+Now if we aggregate the lender (issuer role) and the looper (user role):
+\begin{enumerate}
+  \item User deposits $x$ of $B$, mints $x$ of $A$.
+  \item Issuer deposits $x$ of $B$ in $A/B$ market.
+  \item User builds position $(M+1)x$ of $A$, $Mx$ of $B$ (debt).
+\end{enumerate}
+
+%% ----------------------------------------------------------------
+\section{Revision notes}
+
+These are editorial and mathematical notes to incorporate in a later
+revision.  They are intentionally appended rather than folded into the
+main text, so the current argument remains unchanged.
+
+\subsection*{1. Collateral convention}
+
+The current draft mixes two different looping conventions.
+In the initial numerical example, $P_2$ starts with $100X$, posts that
+$100X$ as collateral, borrows $60S$, and deposits the borrowed $60S$
+back into $V$ for another $60X$.  The balance sheet is then written as
+\[
+  P_2 = 160X - 60S.
+\]
+That is economically correct as a net position, but it is ambiguous as a
+lending-market position.  Did $P_2$ pledge only the first $100X$, or did
+$P_2$ also pledge the newly minted $60X$?
+
+If only the first $100X$ is collateral, the lending-market LTV is
+\[
+  \frac{60}{100} = 60\%.
+\]
+If the full $160X$ is collateral, the lending-market LTV is
+\[
+  \frac{60}{160} = 37.5\%.
+\]
+These are different models.
+
+The later tranche and TVL sections use the recursive-loop convention:
+initial equity is $e_i$, debt is $m_i e_i$, and total vault
+shares/collateral after looping are $(1+m_i)e_i$.  Under that convention
+the lending-market LTV is
+\[
+  \frac{m_i e_i}{(1+m_i)e_i} = \frac{m_i}{1+m_i},
+\]
+so the LLTV constraint is
+\[
+  \frac{m_i}{1+m_i} \leq \ell
+  \qquad\Longleftrightarrow\qquad
+  m_i \leq \frac{\ell}{1-\ell}.
+\]
+
+The paper should choose one convention and carry it throughout.  Since
+the final section on Paul's tweet uses the recursive convention, the
+cleanest revision is probably to rewrite the earlier examples in that
+language:
+\begin{align*}
+  e_i &= \text{initial equity}, \\
+  m_i e_i &= \text{borrowed amount}, \\
+  (1+m_i)e_i &= \text{total collateral/shares after looping}.
+\end{align*}
+This avoids using $M$ sometimes as borrow-against-original-equity and
+sometimes as recursive debt/equity multiplier.
+
+\subsection*{2. Senior yield statement}
+
+The current tranche interpretation says that non-looping depositors earn
+$s\varepsilon$ and that their yield is independent of the borrow market.
+That is not consistent with the earlier model.  The heterogeneous
+borrower section derives
+\[
+  A_i = c_v + m_i\Delta_v,
+  \qquad
+  c_v = s\varepsilon + r\varphi,
+  \qquad
+  \Delta_v = s\varepsilon - r(1-\varphi).
+\]
+A non-looper has $m_i=0$, hence
+\[
+  A_i = c_v = s\varepsilon + r\varphi.
+\]
+
+So senior/non-looping depositors do receive borrow-market income through
+the vault.  They do not only receive the external $L$ yield.  The actual
+distinction is:
+\[
+  \text{senior/non-looper yield} = c_v,
+\]
+while
+\[
+  \text{junior/looper yield} = c_v + m_i\Delta_v.
+\]
+Both groups receive the base vault return $c_v$.  Loopers additionally
+pay borrowing costs and lever the base return, so their incremental
+economics are governed by
+\[
+  \Delta_v = s\varepsilon - r(1-\varphi).
+\]
+That is the more precise tranche split: seniors get the base vault
+return; juniors lever it and are exposed to whether incremental carry is
+positive or negative.
+
+\subsection*{3. Attachment-point math}
+
+The attachment-point section needs a careful rewrite.  It currently
+defines
+\[
+  L_i(\delta)
+  = \max\bigl(0,\; M_i e_i - (1-\delta)(1+M_i)e_i\bigr).
+\]
+This is not the loss absorbed by the junior tranche.  It is the
+lender/senior shortfall after collateral value has already fallen below
+debt.  In other words, it starts counting losses after junior equity is
+gone.
+
+For a homogeneous recursive loop, let
+\[
+  \text{collateral} = (1+M)e, \qquad
+  \text{debt} = Me.
+\]
+After a collateral price drop $\delta$, collateral is worth
+\[
+  (1-\delta)(1+M)e.
+\]
+The looper's remaining equity is
+\[
+  (1-\delta)(1+M)e - Me
+  = \bigl[1-\delta(1+M)\bigr]e.
+\]
+Junior equity is wiped when this equals zero:
+\[
+  1-\delta(1+M)=0
+  \qquad\Longleftrightarrow\qquad
+  \delta_A = \frac{1}{1+M}.
+\]
+Thus if $M=4$, junior is wiped at $1/5 = 20\%$.  If $M=15$, junior is
+wiped at $1/16 = 6.25\%$.  These are the clean attachment-point numbers
+when attachment means ``senior losses begin'' absent liquidation.
+
+The liquidation threshold is separate.  If the liquidation LLTV is
+$\ell$, liquidation occurs when
+\[
+  \frac{Me}{(1-\delta)(1+M)e} > \ell.
+\]
+Solving gives
+\[
+  \delta_{\mathrm{liq}}
+  = 1 - \frac{M}{\ell(1+M)}.
+\]
+For $\ell=0.83$ and $M=4$,
+\[
+  \delta_{\mathrm{liq}}
+  = 1 - \frac{4}{0.83 \cdot 5}
+  \approx 3.6\%.
+\]
+Liquidation therefore triggers long before junior equity is fully wiped,
+which is the intended function of liquidation.
+
+The current formula
+\[
+  1 - \frac{M\ell}{1+M}
+\]
+is neither the liquidation trigger nor the equity wipeout point under the
+recursive definitions above.  A cleaner revision should separate:
+\[
+  \delta_{\mathrm{liq}} = 1-\frac{M}{\ell(1+M)}
+  \quad\text{(liquidation starts),}
+\]
+\[
+  \delta_A = \frac{1}{1+M}
+  \quad\text{(junior equity is gone and senior loss begins absent liquidation),}
+\]
+and
+\[
+  L_{\mathrm{senior}}(\delta)
+  = \max\bigl(0,\; Me-(1-\delta)(1+M)e\bigr)
+  \quad\text{(senior shortfall after attachment).}
+\]
+
+\subsection*{4. Fixed loanable supply versus vault allocation}
+
+The heterogeneous section currently combines two assumptions that are
+not automatically compatible.  First, the vault allocates a fixed
+fraction $\varepsilon$ to $L$ and $\varepsilon'=1-\varepsilon$ to $M$.
+Second, the loanable supply on $M$ is taken to be fixed at $\bar S$, and
+the clearing condition is written as
+\[
+  Y = \bar S.
+\]
+If $M$ supply comes from the vault's allocation rule, then the supply is
+not exogenous.  It is
+\[
+  S_M(Y) = \varepsilon'(E+Y).
+\]
+If all supplied funds are borrowed at clearing, then
+\[
+  Y = \varepsilon'(E+Y),
+\]
+so
+\[
+  Y(1-\varepsilon') = \varepsilon'E
+  \qquad\Longleftrightarrow\qquad
+  Y = \frac{\varepsilon'}{\varepsilon}E.
+\]
+
+The model should therefore choose one of two clean formulations.
+
+\medskip\noindent
+\textbf{Fixed external supply.}
+The lending market has exogenous loanable supply $\bar S$.  The vault may
+own some or all of that supply, but $\bar S$ is treated as fixed for the
+equilibrium exercise.  In that case the fixed-fraction allocation
+language should be softened in this section.
+
+\medskip\noindent
+\textbf{Endogenous vault supply.}
+Loanable supply is
+\[
+  S_M(Y) = \varepsilon'(E+Y),
+\]
+and borrowing must satisfy
+\[
+  Y \leq S_M(Y).
+\]
+Then clearing is a fixed point involving both borrower demand and the
+vault allocation rule.  This is more faithful to the wash-lending loop,
+but it is also more involved.
+
+\subsection*{5. Price-taking versus strategic loopers}
+
+The bang-bang result is correct as a price-taking benchmark, but the
+assumption should be stated explicitly.  Since
+\[
+  A_i = c_v + m_i\Delta_v
+\]
+is linear in $m_i$, the optimum is $m_i=M_i$ or $m_i=0$ if borrower $i$
+treats
+\[
+  r,\qquad \varphi,\qquad c_v,\qquad \Delta_v
+\]
+as fixed.
+
+But a large looper changes aggregate debt $Y$, hence changes
+\[
+  \varphi = \frac{Y}{E+Y},
+  \qquad
+  r_{\mathrm{eff}} = r(1-\varphi),
+  \qquad
+  \Delta_v = s\varepsilon - r(1-\varphi).
+\]
+So a large looper is not simply choosing leverage at a given spread; the
+looper changes the spread by looping.  This is already visible in the
+two-player example: when $P_1$ exits, $P_2$ becomes the residual owner of
+the vault and recaptures all interest paid to the vault, so the effective
+borrow cost falls to zero.
+
+The revision should split the analysis into:
+\[
+  \text{atomistic benchmark: } r \text{ and } \varphi \text{ fixed,}
+\]
+where the bang-bang result applies, and
+\[
+  \text{strategic borrower case: } m_i \text{ affects } Y,\varphi,
+  \text{ and possibly } r,
+\]
+where the objective is nonlinear and the bang-bang conclusion does not
+automatically follow.
+
+\subsection*{6. Suggested structure}
+
+The draft currently reads like research notes, jumping from the toy
+example to the general model, the Morpho equilibrium, Resolv, the CDO
+analogy, liquidation math, and Paul's tweet.  For circulation, the main
+line should probably be narrower.
+
+A clearer structure would be:
+\begin{enumerate}
+  \item Start with the toy example.  The goal is to make the reader see
+  the mechanism numerically: $P_2$ borrows from the vault, pays interest
+  to the vault, and recaptures part of that interest through vault
+  ownership.
+
+  \item Generalize to the two-player model.  Derive the central identity
+  \[
+    b_{\mathrm{eff}} = b\frac{x_1}{T}.
+  \]
+
+  \item Move to many borrowers.  Define $E$, $Y$, and $\varphi$, then
+  derive
+  \[
+    A_i = c_v + m_i\Delta_v.
+  \]
+
+  \item Discuss equilibrium consequences: non-monotone demand, inverted
+  rate sensitivity, multiple equilibria, and the positive externality
+  from aggregate leverage.
+
+  \item Introduce the tranche interpretation as an economic analogy, not
+  as literal legal seniority.
+
+  \item Put liquidation and loss-threshold math after the tranche
+  interpretation, separating liquidation trigger, junior wipeout, senior
+  shortfall, and exit-liquidity horizon.
+
+  \item Move the note on Paul's tweet and TVL inflation conventions to an
+  appendix or separate closing note.
+\end{enumerate}
+
+\subsection*{7. Draft markers and portability}
+
+A few local draft markers should be resolved before sharing the PDF.
+
+The parenthetical ``or has the rate changed?'' in Step~2 should be
+replaced by the actual modeling assumption.  If shares are minted at
+current NAV and there has been no accrued yield or loss yet, then
+$y_2S$ mints $y_2X$; otherwise it mints
+\[
+  \frac{y_2}{\mathrm{NAV}}
+\]
+shares.
+
+The phrase ``so to speak'' in the Step~3 discussion should be replaced by
+a precise statement:
+when $P_1$ exits, $P_2$ becomes the residual owner of the vault and
+recaptures all interest paid to the vault.
+
+The former hard-coded style path
+\verb|\usepackage{/Users/V/icd/sty/vmacros}| made the document
+non-portable.  The only needed macro from that file was \verb|\ttt|, now
+defined locally in the preamble.  If more convenience macros are
+introduced later, either define them locally or vendor \texttt{vmacros.sty}
+into the repo.
+
+Finally, the abstract added at the front can be further refined around
+this core statement:
+\begin{quote}
+A vault that lends against its own shares creates an interest-rebate
+loop: borrowers pay interest to the vault, then recover part of that
+interest through their vault shares.  This lowers their effective borrow
+cost, creates self-reinforcing leverage, and can make borrower demand
+non-monotone in the borrow rate.
+\end{quote}
+
+\end{document}

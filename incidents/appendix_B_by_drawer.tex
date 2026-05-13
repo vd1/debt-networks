@@ -1,0 +1,274 @@
+\section{DeFi incidents --- by drawer (Oct 2025 → Apr 2026)}\label{defi-incidents-by-drawer-oct-2025-apr-2026}
+
+Taxonomy view of the same incidents in \texttt{defi\_incidents\_2025-10\_to\_2026-04.md}. Each entry: date --- name --- amount --- one-line cause. \texttt{↔} marks cross-listed incidents (primary drawer + secondary tag). Short Morpho-relevance note at the end of each drawer.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{1. Smart contract bugs (pure code / logic)}\label{smart-contract-bugs-pure-code-logic}
+
+Arithmetic, reentrancy, state-consistency, soundness, unsanitized calls.
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{2026-04-13} --- Hyperbridge --- \textasciitilde\$2.5M --- Missing bounds check in MMR proof verifier → 1B bridged DOT minted. ↔ \emph{bridge}
+\item
+  \textbf{2026-04-13} --- Dango perps --- \$410K (recovered) --- Insurance-fund donation logic didn't check \texttt{amount\ \textgreater{}\ 0}.
+\item
+  \textbf{2026-04-03} --- Silo Finance --- \$392K --- Oracle misconfig in a permissionless market. ↔ \emph{oracle}
+\item
+  \textbf{2026-03-05/06} --- 1inch Fusion v1 --- \textasciitilde\$5M --- Calldata-length / buffer overflow in \texttt{\_settleOrder}; end-user funds untouched.
+\item
+  \textbf{2026-03} --- Solv Protocol --- \textasciitilde\$2.7M --- Reentrancy / double-mint in BRO vault handling ERC-3525 deposits; 135 BRO → 567M counterfeit BRO.
+\item
+  \textbf{2026-02-26} --- Foom Cash --- \$2.26M (\$1.84M returned) --- Groth16 verifier \texttt{delta2\ ==\ gamma2} (skipped Phase-2 trusted setup) → forged nullifier hashes.
+\item
+  \textbf{2026-02-20/22} --- Veil Cash --- \textasciitilde\$7K --- Same \texttt{delta2\ ==\ gamma2} zkSNARK-soundness flaw (progenitor of Foom).
+\item
+  \textbf{2026-01-25} --- SwapNet --- \$13.43M --- Arbitrary-call + unsanitized \texttt{transferFrom} abused user approvals. ↔ \emph{approval surface}
+\item
+  \textbf{2026-01-25} --- Aperture Finance --- \$3.67M --- Same root cause as SwapNet. ↔ \emph{approval surface}
+\item
+  \textbf{2026-01-21} --- Saga (SagaEVM) --- \textasciitilde\$7M --- Bridge-validation bypass via IBC precompile manipulation; \$D minted from thin air. ↔ \emph{bridge}
+\item
+  \textbf{2026-01-08} --- Truebit --- \textasciitilde\$26.44M --- Integer overflow in legacy Solidity \^{}0.6.10 \texttt{getPurchasePrice()} (pre-SafeMath). \textbf{Archeological contracts.}
+\item
+  \textbf{2026-01-05} --- TMXTribe --- \$1.4M --- Unverified contract, no sanity checks in LP staking/swap loop.
+\item
+  \textbf{2025-12-30} --- Unleash Protocol --- \textasciitilde\$3.9M --- Multisig governance takeover → malicious upgrade. ↔ \emph{governance}
+\item
+  \textbf{2025-12-27} --- Flow blockchain --- \textasciitilde\$3.9M --- L1 execution-layer flaw → unauthorized FLOW + bridged-asset mint. ↔ \emph{L1 infra}
+\item
+  \textbf{2025-12-04} --- USPD stablecoin --- \textasciitilde\$1M --- \textbf{Deployment-stage} CPIMP proxy takeover; shadow impl held admin silently 78 days.
+\item
+  \textbf{2025-11-30} --- Yearn Finance (yETH) --- \textasciitilde\$9M --- ``16 wei → infinite yETH'' cached-virtual-balance desync.
+\item
+  \textbf{2025-11-03} --- Balancer V2 --- \textasciitilde\$120--128M --- Rounding-direction inconsistency (\texttt{\_upscaleArray} always rounds down) compounded via batchSwap.
+\item
+  \textbf{2025-10-15} --- Typus Finance (Sui) --- \textasciitilde\$3.44M --- Missing authorization assert on oracle \texttt{update\_v2}; out-of-scope of the audit. ↔ \emph{oracle}
+\item
+  \textbf{2025-10-04} --- Abracadabra (Cauldron V4) --- \textasciitilde\$1.8M --- \texttt{cook()} multi-action: Action 0 reset \texttt{CookStatus} after Action 5 set \texttt{needsSolvencyCheck=true} → solvency check bypassed.
+\end{itemize}
+
+\textbf{Morpho relevance:} Morpho Blue's surface here is small (minimal, immutable core), but \emph{curator-added adapters/liquidator helpers} and \emph{vault-wrapping tokens} sit on this risk pane. The Abracadabra ``multi-action composition bypass'' pattern generalizes to any lender accepting atomic action batches.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{2. Oracle failures (misconfig + manipulation)}\label{oracle-failures-misconfig-manipulation}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{2026-04-03} --- Silo Finance --- \$392K --- Misconfigured feed on a permissionless market.
+\item
+  \textbf{2026-03-16} --- Venus Protocol --- \$3.7M extracted / \$2.15M bad debt --- Donation-attack bypassed supply cap + market-price oracle on thin THE.
+\item
+  \textbf{2026-03-10} --- Aave --- \$27.78M liquidated (reimbursed) --- CAPO rate-limit misconfig under-reported wstETH/ETH (1.19 vs 1.23).
+\item
+  \textbf{2026-02-22} --- YieldBlox (Stellar Blend) --- \$10.2M (\$7.2M frozen) --- Thin-liquidity Reflector oracle manipulation; single USTRY offer at 501 USDC.
+\item
+  \textbf{2026-02-15} --- Moonwell --- \$1.78M bad debt --- MIP-X43 wired cbETH/USD as cbETH/ETH only (no ETH/USD mult). \textbf{LST ratio-feed misconfig.}
+\item
+  \textbf{2026-01-20} --- MakinaFi --- \$4.2M --- Permissionless \texttt{updateTotalAum()} + no TWAP/circuit breaker + live Curve spot; flash-loan \$280M USDC, distort, lock NAV, withdraw.
+\item
+  \textbf{2025-12-12} --- Aevo / legacy Ribbon DOV --- \$2.7M --- Oracle upgrade accidentally let anyone push expiry prices.
+\item
+  \textbf{2025-10-15} --- Typus Finance --- \$3.44M --- Missing auth assert on \texttt{update\_v2}.
+\item
+  \textbf{2025-11-04} (secondary cause) --- Stream Finance xUSD --- Multiple lenders had \textbf{hardcoded xUSD oracle at \$1} to prevent cascade liquidations; locked the depeg in as bad debt. ↔ \emph{financial}
+\end{itemize}
+
+\textbf{Morpho relevance:} This is the pane with the highest Morpho-ecosystem tail risk. Every curator-listed LST/LRT/synthetic-stable market rides an oracle decision; Moonwell/Aave CAPO/MakinaFi/Aevo are all reproducible in MetaMorpho vaults via a single bad parameter. \textbf{Hardcoded \$1 oracles on depegging collateral is the specific anti-pattern the user's \texttt{QFTaskList.tex} needs to flag.}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{3. Bridge / cross-chain validation}\label{bridge-cross-chain-validation}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{2026-04-18} --- KelpDAO (rsETH) --- \textasciitilde\$292M --- Single-verifier LayerZero DVN (1-of-1) → forged cross-chain msg → 116,500 rsETH minted → looped through Aave/Morpho/Fluid. \textbf{Cross-lender contagion.}
+\item
+  \textbf{2026-04-13} --- Hyperbridge --- \textasciitilde\$2.5M --- MMR proof-verifier bug; 1B bridged DOT minted on Ethereum.
+\item
+  \textbf{2026-02-21} --- IoTeX ioTube --- \textasciitilde\$4.3M + 111M CIOTX minted --- Compromised Ethereum-side Validator key. ↔ \emph{credential}
+\item
+  \textbf{2026-01-31 → 02-01} --- CrossCurve --- \textasciitilde\$3M --- Spoofed Axelar messages via unvalidated \texttt{expressExecute} in PortalV2.
+\item
+  \textbf{2026-01-21} --- Saga (SagaEVM) --- \textasciitilde\$7M --- IBC precompile manipulation minted \$D.
+\end{itemize}
+
+\textbf{Morpho relevance:} Morpho doesn't run a bridge, but \emph{collateral that traveled over a bridge} can introduce an exogenous mint-event risk the lender inherits. KelpDAO is the canonical case --- a vault lending against rsETH is exposed to the rsETH bridge regardless of the lender's own correctness.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{4. Credential / key compromise}\label{credential-key-compromise}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{2026-04-14} --- Zerion --- \textasciitilde\$100K --- UNC1069 AI-assisted SE; hot-wallet drain.
+\item
+  \textbf{2026-02-21} --- IoTeX Validator --- see bridge drawer.
+\item
+  \textbf{2026-01-31 (disclosed)} --- Step Finance --- \textasciitilde\$27.3M (261,854 SOL) --- Exec device phished; keys drained multisig.
+\item
+  \textbf{2025-11-20} --- GANA Payment --- \textasciitilde\$3.1M --- Smart-contract ownership compromised; reward rates changed + unstake drain.
+\item
+  \textbf{2025-10-30} --- Garden Finance --- \textasciitilde\$11.4M --- Solver-layer infra compromise (EY: IPs from Japan/China).
+\item
+  \textbf{2026-03-22} --- Resolv Labs --- \$25M ETH + 80M unbacked USR --- Compromised SERVICE\_ROLE EOA (not multisig) + missing mint-cap/oracle checks. ↔ \emph{contract bug}
+\end{itemize}
+
+\textbf{Morpho relevance:} Off-chain hygiene of \emph{every} participant in a Morpho vault's dependency graph (curator signing keys, collateral issuer admin keys, oracle updater keys) is in scope. Resolv is the painful case where a stablecoin-issuer EOA compromise cascaded into Morpho vault bad debt.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{5. Governance / multisig compromise (via social engineering)}\label{governance-multisig-compromise-via-social-engineering}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{2026-04-01} --- Drift Protocol --- \textasciitilde\$285M --- Lazarus SE'd Security Council into pre-signing txs wrapped as Solana durable nonces; activated months later to list fake CVT as collateral.
+\item
+  \textbf{2025-12-30} --- Unleash Protocol --- \$3.9M --- Multisig governance takeover → unauthorized upgrade. ↔ \emph{contract bug}
+\end{itemize}
+
+\textbf{Morpho relevance:} Curator governance is the Morpho analog. A sufficiently patient SE campaign against a curator's signers could reproduce Drift-style ``new collateral listed, caps raised, then drained.'' User's existing ``Étude villain / attack Morpho'' thread maps directly here.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{6. Frontend / DNS / supply-chain}\label{frontend-dns-supply-chain}
+
+Protocol contracts untouched; losses come through user-side approvals or wallet key theft.
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{2026-04-14} --- CoW Swap (cow.fi) --- \textasciitilde\$1.2M --- Forged IDs against Finland Traficom + Gandi → DNS points to phishing.
+\item
+  \textbf{2026-03-19} --- Neutrl --- \textasciitilde zero --- \texttt{.fi} DNS-campaign hijack attempt.
+\item
+  \textbf{2026-02-16} --- OpenEden --- no loss --- AngelFerno DNS hijack.
+\item
+  \textbf{2026-02-16} --- Curvance --- zero --- AngelFerno DNS without DNSSEC; detected pre-drain.
+\item
+  \textbf{2025-12 (exact day unclear)} --- Trust Wallet extension v2.68 --- \textgreater\$6M --- Malicious extension version exfiltrated keys.
+\item
+  \textbf{2025-11-21/22} --- Aerodrome + Velodrome --- \textasciitilde\$700K--\$1M+ --- NameSilo internal compromise bypassed 3DNS multisig; DNSSEC removed.
+\end{itemize}
+
+\textbf{Morpho relevance:} Not a direct Morpho attack surface, but the user-approval model of any DeFi lender means a DNS hijack of a popular vault aggregator frontend (Morpho.org itself, or any MetaMorpho allocator's UI) would produce Aerodrome-style losses without touching Morpho contracts.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{7. Financial / off-chain loss / stablecoin depeg}\label{financial-off-chain-loss-stablecoin-depeg}
+
+Not a contract bug --- exposure via assets losing peg, off-chain fund-manager losses, recursive collateral loops.
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{2026-03-22} --- Resolv Labs USR depeg --- (see credential drawer; the depeg itself is the financial contagion arm) --- Hit \textasciitilde15 Morpho vaults; Gauntlet USDC Core held \$4.95M in wstUSR/USDC = 98\% of that market's lender liquidity.
+\item
+  \textbf{2025-11-04 → 11-07} --- Stables Labs USDX --- -94\% --- Triggered by Balancer V2 drain of USDX/sUSDX pool + cascading leveraged liquidations on Lista/PancakeSwap.
+\item
+  \textbf{2025-11-04 → 11-07} --- Elixir deUSD --- -98\% --- 65\% of deUSD collateral was in private Morpho vaults where Stream was sole borrower using xUSD. Collapsed with Stream.
+\item
+  \textbf{2025-11-04} --- \textbf{Stream Finance (xUSD)} --- \$93M initial / \textasciitilde\$285M interconnected --- Off-chain fund-manager loss. Hardcoded \$1 oracles locked bad debt into books. Euler third-party curator vaults: \$137M. TelosC (\$123.6M) and Elixir (\$68M) largest single exposures. \textbf{The canonical case: pinned oracles + risk-curator allocation + hidden-borrower private vaults + recursive loops + TVL illusion all in one episode.}
+\end{itemize}
+
+\textbf{Morpho relevance:} This is the most important drawer for the user's thesis. Every ``illusion'' in their \texttt{QFTaskList.tex} (collateral independence, TVL, diversification, leverage) shows up here. \textbf{Stream is the single best case study in the whole list.}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{8. Market manipulation (perps / thin pools)}\label{market-manipulation-perps-thin-pools}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{2025-11-13} --- Hyperliquid HLP --- \$4.9M bad debt --- \$20M POPCAT buy-wall at \$0.21, withdrawn, crashed; community vault absorbed bad debt. \textbf{Third such attack on Hyperliquid in 2025.}
+\item
+  \textbf{2026-04-15 → 04-17} --- Rhea Finance (NEAR) --- \$18.4M --- Fake pools on Ref Finance + Rhea margin feature → borrow real vs phantom collateral. (Also: \emph{oracle}-adjacent.)
+\end{itemize}
+
+\textbf{Morpho relevance:} Morpho Blue itself is slow-moving (no perps), but its \emph{permissionless market creation} means a curator who lists a thin collateral with a market-price oracle reproduces the Venus/Rhea pattern. Supply-cap controls matter here.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{9. L1 / chain-level}\label{l1-chain-level}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{2025-12-27} --- Flow --- \$3.9M --- Execution-layer bug allowed native FLOW + bridged-asset mint. Foundation proposed 6h chain rollback.
+\end{itemize}
+
+\textbf{Morpho relevance:} Any chain Morpho deploys to inherits this risk level as a baseline. Worth flagging to curators the historical base rate of L1 incidents per chain.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{10. Operational near-misses / non-exploits}\label{operational-near-misses-non-exploits}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{2025-10-14} --- PYUSD (Paxos) --- accidentally minted \textasciitilde\$300 trillion then burned minutes later. Not an exploit. Worth filing as an operational base-rate signal for issuer mistakes.
+\item
+  \textbf{2026-04-15} --- Grinex exchange --- \$13.7M --- Sanctioned CeFi venue drain; not DeFi but adjacent in the April narrative.
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{Drawer sizes (period total)}\label{drawer-sizes-period-total}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Drawer
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+\# incidents
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Order-of-magnitude \$
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Smart contract bugs & 19 & \textasciitilde\$200M (Balancer dominates) \\
+Oracle failures & 9 (overlapping) & \textasciitilde\$50M directly + \$285M contagion enabled \\
+Bridge / cross-chain & 5 & \textasciitilde\$310M (Kelp dominates) \\
+Credential / key comp. & 6 & \textasciitilde\$70M \\
+Governance / multisig & 2 & \textasciitilde\$290M (Drift dominates) \\
+Frontend / DNS & 6 & \textasciitilde\$8M \\
+Financial / depeg & 3 & \textasciitilde\$450M interconnected \\
+Market manipulation & 2 & \textasciitilde\$23M \\
+L1 / chain-level & 1 & \$3.9M \\
+Op. near-miss & 2 & negligible \\
+\end{longtable}
+}
+
+\emph{(Dollar totals approximate and sometimes double-count --- Kelp is in both ``bridge'' and drives the ``financial contagion'' around it. This is the point --- the drawers overlap precisely where systemic risk lives.)}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{Cross-drawer patterns worth pulling out}\label{cross-drawer-patterns-worth-pulling-out}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  \textbf{DPRK / Lazarus attribution on the big ones} --- Drift (\$285M), KelpDAO-related (\$292M operational attribution debated), Zerion (\$100K), Upbit CeFi (\$36M Nov 2025). The pattern: increasingly patient, AI-assisted SE against signers rather than direct contract attacks.
+\item
+  \textbf{Archeological contracts} --- Truebit (2021 code), Aevo legacy Ribbon, Yearn iEarn v1. Forks and legacy deployments carry tail risk for years.
+\item
+  \textbf{\texttt{.fi} / DNS-registrar weakness as a campaign} --- CoW Swap + Steakhouse + HypurrFi + Neutrl. Registrar hardening (RegistryLock, DNSSEC) is the cheap mitigation.
+\item
+  \textbf{Curator concentration \textgreater{} diversity} --- Stream, Resolv, Elixir all show that ``vault N has exposure to asset X'' aggregated across curators produces concentrated single-asset risk even when any individual vault looks small. Directly validates the \textbf{TVL illusion} and \textbf{diversification illusion} entries in \texttt{QFTaskList.tex}.
+\item
+  \textbf{Oracle-pinning as a cascade amplifier} --- Hardcoding \$1 on a depegging asset converts a price-discovery event into unrecoverable bad debt. Stream is the textbook case.
+\end{enumerate}

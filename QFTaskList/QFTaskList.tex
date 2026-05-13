@@ -1,0 +1,189 @@
+\documentclass[12pt,oneside]{article}
+\frenchspacing
+\usepackage[utf8]{inputenc}
+\usepackage{csquotes}
+\MakeOuterQuote{"}
+
+\usepackage{ulem}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{enumitem}
+\usepackage{longtable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{calc}
+
+\usepackage{/Users/V/icd/sty/vmacros}
+
+\usepackage{amssymb}
+%\parindent0pt
+\usepackage{geometry}
+\usepackage{amsmath}
+
+%\usepackage{fontspec}
+%\setmainfont{optima}
+
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linktoc=all,
+    linkcolor=blue,
+}
+
+\def\F#1{\framebox{#1}}
+
+\usepackage{newunicodechar}
+\newunicodechar{→}{\ensuremath{\rightarrow}}
+\newunicodechar{↔}{\ensuremath{\leftrightarrow}}
+\newunicodechar{≠}{\ensuremath{\neq}}
+\newunicodechar{×}{\ensuremath{\times}}
+\newunicodechar{²}{\ensuremath{^{2}}}
+\newunicodechar{⁶}{\ensuremath{^{6}}}
+
+\usepackage{xparse}
+\newdimen\imageWidth
+\NewDocumentCommand{\iMG}{ m m O{}}{%
+  \begin{figure}[h!]
+    \centering
+%#1\textwidth\imageScale
+    \includegraphics[width=#1\imageWidth\relax]{#2}
+%    \IfValueT{#3}{\label{#3}}
+    \IfValueT{#3}{\caption{\small\it #3}}
+  \end{figure}
+}
+
+
+%\geometry{paperwidth=740pt}
+\geometry{paperwidth=1408pt}
+\geometry{paperheight=880pt}                   	% 16:10
+
+%\sectioning
+\def\Chap#1{\chapter{\lA{#1}}}
+\def\Sec#1{\section{\lA #1}}
+\def\Ssec#1{\subsection{\lA #1}}
+\def\Sssec#1{\subsubsection{\lA #1}}
+
+%SLIDE
+%\def\lA{\Huge}
+%\def\NP{\newpage}
+%\geometry{textwidth=1200pt}
+%\geometry{textwidth=880pt}
+%\geometry{textheight=550pt}
+%\imageWidth=0.8\textwidth
+%\usepackage[parfill]{parskip}
+%\parskip10pt
+
+
+%NORMAL
+\def\lA{\Large}
+\def\NP{}
+\geometry{textwidth=1200pt}
+\geometry{textheight=650pt}
+\geometry{columnsep=60pt}
+\twocolumn
+\imageWidth=0.4\textwidth
+
+
+\newcommand{\pe}{\mathrel{+\mkern-6mu=}}
+\newcommand{\me}{\mathrel{-\mkern-6mu=}}
+
+%\def\fb#1{\framebox{\begin{minipage}{0.35\textwidth}#1\end{minipage}}}
+\def\PA{\medskip\\}
+
+\title{QF Task List}
+
+%\twocolumn
+
+\begin{document}
+\maketitle
+\Large
+
+% Transcription of handwritten note (IMG_0429.png / png/QFTaskList_sketch.png).
+% Words marked [?] are uncertain reads — please correct.
+
+\section{Risk notes: DIG and YTD}
+
+
+\subsection{Episodes and Risk framework milestones}
+
+
+for each eposiode, which can be anticipated/detected/reacted upon via DIG/YTD?
+how would a risk harness detect or mitigate or miss it?
+
+\subsubsection{recent ($>$ Oct 2026) real incidents}
+
+KelpDAO's rsETH bridge (200M), Drift's, USR depeg (stolen private key, mega mint, no cap), etc
+
+Stream Finance (Nov 2025): xUSD (Stream)/deUSD(Elixir) joint amplifcation and depeg; every pathology in one episode. 
+
+Moonwell (Feb 2026) is the cleanest oracle-wiring case. 
+
+KelpDAO (Apr 2026) is the cleanest looping-contagion case.
+
+- get back Amaury's list incidents in his slides
+
+- pipe codex search into DIG and YTD (not sure what I meant here ...)
+
+NB: YTD edges (in the vault unfolding of Amaury) are actually USDC verbs, so should be in the DIG
+
+About the DIG/YTD tool: There is a quadruple root of lender and borrower's illusion (despite the compartmentalisation of markets on some lending platforms)
+\begin{itemize}
+  \item collateral independence illusion (depegs propagate through YTD, diagram1): vault can lend on market $M_1$:siUSD/USDC where the (staked form of) vault token siUSD/$\infty$FI 
+  contains wsrUSD/Reservoir (another staked form of vault token) in its YTD; depegs on the latter will depeg the former; hence the
+  default probabilities of the former does depend on that of the latter
+  \item TVL illusion (diagram2)
+  \item diversification illusion (diagram2)
+  \item (non-) leverage illusion (dark loops, diagram3): see wash-lending; looping via a vault distorts the leverage of one passive player by the looping one - 
+  the increased risk is not visible at the investment surface
+\end{itemize}
+
+
+\section{Allocator}
+
+\subsection{Lender's allocation}
+- (done) connect lender's allocator to actual vaults (or set of markets); starting with Amaury's;
+
+- add in- and out- flows
+
+- add liquidity constraints
+
+\subsection{Looper's allocation}
+
+- revise the mms scanning tool; make it a series (via Amaury's node)
+
+
+\section{Execution}
+
+
+
+
+% --- Diagrams ---
+% The handwritten page contains two free-form flow diagrams
+% (left: wallet -> ST_b vault -> market, with amounts 10, 190/110, ofs/ST_0, wrappedST, etc.;
+%  bottom: Reservoir USDC <-> st_b <-> stylate/edge/borrow, with amounts 100, +USDC, +100, +10 flash, +80 loop, USDC/USDC labels).
+
+\onecolumn
+\begin{figure}[h!]
+  \centering
+  \includegraphics[height=0.9\textheight,keepaspectratio]{diagrams/maia1.png}
+  \caption{\small\it Illusion of TVL and diversification}
+\end{figure}
+\twocolumn
+
+
+\section{Games}
+Collect game's views on the 2-sided allocation problem (Morpho v1).
+
+QVI, mean field games etc
+
+% --- Appendix: DeFi incident research (Oct 2025 -- Apr 2026) ---
+\onecolumn
+\appendix
+
+% Helper expected by pandoc-generated LaTeX
+\providecommand{\tightlist}{\setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+\input{appendix_A_chronological}
+\input{appendix_B_by_drawer}
+
+\end{document}

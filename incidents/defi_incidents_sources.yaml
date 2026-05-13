@@ -1,0 +1,196 @@
+# DeFi incident research — canonical source index
+# Built from the Oct 2025 → Apr 2026 sweep. Use this as the starting
+# point for future searches. Grouped by what each source is best for.
+
+meta:
+  compiled: 2026-04-22
+  window: 2025-10-01 to 2026-04-22
+  companion_file: defi_incidents_2025-10_to_2026-04.md
+
+# --- Primary incident trackers (check these first) ------------------
+
+trackers:
+  - name: rekt.news
+    url: https://rekt.news/
+    leaderboard: https://rekt.news/leaderboard
+    notes: Deep postmortems on >$1M incidents. Individual posts at /<protocol>-rekt.
+    search_hint: "site:rekt.news <protocol>"
+
+  - name: DefiLlama Hacks
+    url: https://defillama.com/hacks
+    notes: Structured DB of DeFi exploits with dates, amounts, vectors. Best
+      cross-check for "did incident X actually happen" and for the $500K–$10M
+      long tail that news misses.
+
+  - name: PeckShield (X alerts + monthly recaps)
+    url: https://x.com/PeckShieldAlert
+    notes: Real-time on-chain exploit detection. Monthly recap tweets are
+      the best single monthly index. Search "PeckShield monthly <month> <year>".
+
+  - name: SlowMist Hacked
+    url: https://hacked.slowmist.io/
+    notes: Another structured incident DB; good cross-check on PeckShield.
+
+  - name: ZachXBT
+    url: https://x.com/zachxbt
+    notes: On-chain investigator. Best for exchange/wallet-drain incidents,
+      team complicity allegations, laundering traces.
+
+# --- Audit / security firm monthly reviews (index style) ------------
+
+monthly_reviews:
+  - name: Halborn — "Top DeFi Hacks of <Month> <Year>"
+    url_pattern: https://www.halborn.com/blog/post/month-in-review-top-defi-hacks-of-<month>-<year>
+    example: https://www.halborn.com/blog/post/month-in-review-top-defi-hacks-of-february-2026
+    notes: Single best "what happened this month" summary. Hit monthly.
+
+  - name: QuillAudits hack analyses
+    url_pattern: https://www.quillaudits.com/blog/hack-analysis/<protocol>-exploit-explained
+    twitter: https://x.com/QuillAudits_AI
+
+  - name: BlockSec incident analyses
+    url_pattern: https://blocksec.com/blog/<slug>
+    notes: Deep technical postmortems, especially on multisig / durable-nonce
+      / cross-chain incidents.
+
+  - name: Check Point Research
+    url_pattern: https://research.checkpoint.com/<year>/<slug>
+    notes: Rounding-error and low-level bug analyses (Balancer, "16 wei").
+
+  - name: Three Sigma Exploits
+    url_pattern: https://threesigma.xyz/blog/exploit/<slug>
+
+  - name: Chainalysis / TRM Labs
+    urls:
+      - https://www.chainalysis.com/blog/
+      - https://www.trmlabs.com/resources/blog
+    notes: State-actor attribution (Lazarus, UNC1069) and laundering analysis.
+
+  - name: Blockaid
+    url: https://www.blockaid.io/blog
+    notes: Key-compromise and frontend-attack analyses.
+
+  - name: OpenZeppelin
+    url: https://www.openzeppelin.com/news
+    notes: Postmortems especially when OZ contracts/forks are involved.
+
+  - name: Olympix AI
+    url: https://olympixai.medium.com/
+    notes: Deep dives on specific exploits (e.g. 1inch Fusion v1).
+
+# --- News outlets -----------------------------------------------------
+
+news_outlets:
+  - CoinDesk:      https://www.coindesk.com
+  - The Block:     https://www.theblock.co
+  - Cointelegraph: https://cointelegraph.com
+  - Decrypt:       https://decrypt.co
+  - Blockworks:    https://blockworks.co
+  - DL News:       https://www.dlnews.com
+  - The Defiant:   https://thedefiant.io
+  - Protos:        https://protos.com        # best editorial takes on curator / governance
+  - Crypto.news:   https://crypto.news
+  - Cryptopolitan: https://www.cryptopolitan.com
+  - Crypto Times:  https://www.cryptotimes.io
+
+# --- Curator / Morpho-ecosystem sources (for the risk-curator thread) -
+
+curator_ecosystem:
+  forums:
+    - Morpho governance:
+        url: https://forum.morpho.org  # verify exact URL; docs live at docs.morpho.org
+        docs: https://docs.morpho.org/curate/tutorials-v1/bad-debt/
+    - Euler governance:
+        url: https://forum.euler.finance
+        notable_thread: https://forum.euler.finance/t/request-for-a-formal-governance-proposal-regarding-compensation-for-users-affected-by-the-elixir-and-steam-labs-collapse/1708
+    - Moonwell governance:
+        url: https://forum.moonwell.fi
+        example_postmortem: https://forum.moonwell.fi/t/mip-x43-cbeth-oracle-incident-summary/2068
+
+  curator_x_accounts:
+    - name: MEV Capital
+      handle: "@MEVCapital"
+      url: https://x.com/MEVCapital
+      nov2025_thread: https://x.com/MEVCapital/status/1986038314642595857
+    - name: Re7 Labs
+      handle: "@Re7Labs"
+      url: https://x.com/Re7Labs
+      nov2025_thread: https://x.com/Re7Labs/status/1985694621251387506
+    - name: Gauntlet
+      handle: "@Gauntlet_xyz"
+      url: https://x.com/gauntlet_xyz
+      nov2025_report: https://www.gauntlet.xyz/resources/market-report-liquidity-stress-period-nov-2025
+    - name: Steakhouse Financial
+      handle: "@SteakhouseFi"
+      url: https://x.com/SteakhouseFi
+    - name: TelosC
+      notes: Named in xUSD exposure; no detailed public postmortem found. Search.
+
+  protocol_leads:
+    - name: Paul Frambot (Morpho)
+      handle: "@Paul_Frambot"
+    - name: Stefan Ragonic (Euler)
+      handle: "@0xStefanRagonic"
+    - name: monetsupply (Maker/Sky)
+      handle: "@monetsupply"
+    - name: Omer Goldberg (Chaos Labs)
+      handle: "@omeragoldberg"
+
+  research_shops:
+    - Chorus One:
+        "DeFi Curators in 2025": https://chorus.one/reports-research/defi-curators-in-2025-navigating-chaos-building-resilience
+
+# --- On-chain / security researchers to follow -----------------------
+
+researchers_on_x:
+  - "@samczsun"         # exploit analyst / white hat
+  - "@officer_cia"      # threat intel
+  - "@BlockSecTeam"
+  - "@tayvano_"
+  - "@peckshield"
+  - "@AnciliaInc"
+  - "@QuillAudits_AI"
+  - "@CyversAlerts"
+
+# --- Search templates (use these verbatim) ---------------------------
+
+search_templates:
+  monthly_generic:
+    - "DeFi hack {month} {year}"
+    - "DeFi exploit {month} {year}"
+    - "crypto hack {month} {year}"
+    - "{month} {year} rekt"
+    - "PeckShield monthly {month} {year}"
+  vector_specific:
+    - "oracle manipulation DeFi {year}"
+    - "stablecoin depeg {year}"
+    - "bridge hack {year}"
+    - "lending protocol hack {year}"
+    - "multisig compromise DeFi {year}"
+    - "DNS hijack DeFi {year}"
+  protocol_specific:
+    - "Morpho vault exploit"
+    - "Morpho curator bad debt"
+    - "MetaMorpho delisted"
+    - "Euler bad debt curator"
+    - "Silo finance exploit"
+    - "Pendle PT exploit"
+  morpho_risk_angles:
+    - "Morpho Blue oracle misconfiguration"
+    - "MetaMorpho curator postmortem"
+    - "Morpho depeg exposure"
+    - "wash-lending Morpho"
+    - "looping vault dark loops"
+
+# --- Gaps / things worth re-checking next time ------------------------
+
+known_gaps:
+  - TelosC public postmortem on xUSD exposure (Nov 2025) — not found.
+  - MakinaFi secondary reporting beyond rekt.news / coinalertnews is thin.
+  - Aperture Finance vs SwapNet breakdown: $3.67M + $13.43M = $17M combined.
+    Some aggregators treat as one incident — disambiguate.
+  - "Morpho TVL $10B→$7B" figure commonly misattributed to Resolv; actually
+    refers to curator-industry TVL contracting after Stream. Verify before
+    citing analytically.
+  - Feb 2026 IoTeX exact day: 2026-02-21 per Crypto Times; some aggregators
+    list different days — prefer the Crypto Times / Halborn date.
