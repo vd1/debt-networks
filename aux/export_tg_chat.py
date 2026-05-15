@@ -16,7 +16,7 @@ from pathlib import Path
 try:
     from telethon import TelegramClient
 except ImportError:
-    print("Run via: uv run export_tg_chat.py", file=sys.stderr)
+    print("Run via: uv run aux/export_tg_chat.py", file=sys.stderr)
     sys.exit(1)
 
 # Reuse dataroom's config dir for session/credentials
