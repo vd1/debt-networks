@@ -630,6 +630,176 @@ Right: senior-loss probability under ETH-like volatility ($\sigma=80\%$).}
 
 
 %% ----------------------------------------------------------------
+\section{Case study: the Ethena (USDe) self-lending estimate}
+
+On 20 May 2026 the account \texttt{@yieldsandmore} (YAM) published a
+thread\footnote{\url{https://x.com/yieldsandmore/status/2057150511883710628}}
+quote-tweeting Ethena's updated transparency page.  Its claim: of the
+${\approx}\,\$4.4$B backing the synthetic dollar USDe, an estimated
+$\$1.33$B---about $30\%$---is ``lending against itself.''  The estimate
+rests on a pro-rata rule applied market by market:
+\[
+  \text{self-lending} = \sum_k \varphi_k\, B_k,
+\]
+where $B_k$ is gross borrowing against USDe/sUSDe collateral in market
+$M_k$ and $\varphi_k$ is Ethena's share of supplied liquidity there.
+This section maps that thread onto the wash-lending model and then asks
+what a static estimate of this kind cannot see.
+
+\subsection*{The data}
+
+The thread's market-by-market breakdown (all figures in USD millions):
+
+\begin{center}
+\begin{tabular}{llrrrr}
+\hline
+\textbf{Venue} & \textbf{Market} & \textbf{Ethena} & \textbf{USDe+sUSDe}
+  & \textbf{Lender} & \textbf{Est.\ self-} \\
+               &                 & \textbf{supplied} & \textbf{borrowed}
+  & \textbf{share}  & \textbf{lending} \\
+\hline
+Aave    & Plasma USDT0    & 368.0 & 556.0 & 47.4\%  & 263.3 \\
+Aave    & Mantle USDT0    & 168.0 &  58.1 & 100.0\% &  58.1 \\
+Aave    & Ethereum USDtb  & 140.0 &  46.7 & 82.5\%  &  38.5 \\
+Aave    & MegaETH USDm    & 550.0 & 398.9 & 91.2\%  & 363.8 \\
+Morpho  & Base Prime USDC & 252.9 &   0.0 & 54.3\%  &   0.0 \\
+Morpho  & Ethereum USDtb  & 105.0 & 105.3 & 99.7\%  & 105.0 \\
+Kamino  & Sentora USDG    & 250.0 & 250.0 & 100.0\% & 250.0 \\
+Juplend & Bitwise USDG    & 251.0 & 251.0 & 100.0\% & 251.0 \\
+\hline
+\textbf{Total} & & \textbf{2084.9} & \textbf{1666.0} & & \textbf{1329.7} \\
+\hline
+\end{tabular}
+\end{center}
+
+\noindent
+The gross figure---total borrowing collateralised by USDe/sUSDe---is
+${\approx}\,\$1.67$B; the pro-rata attribution discounts it to
+${\approx}\,\$1.33$B, a discount of $\$336$M representing leverage funded
+by lenders other than Ethena.
+
+\subsection*{Mapping onto the model}
+
+The correspondence with the vault network of the preceding sections is:
+\begin{itemize}
+  \item $V$ --- Ethena: the mint contract together with the reserve
+    manager that allocates the backing.
+  \item $S$ --- the loanable stablecoins actually borrowed in the table
+    (USDC, USDT0, USDtb, USDG).
+  \item $X$ --- USDe and its derivatives sUSDe and PT-sUSDe: the
+    share-side tokens posted as collateral.
+  \item $L$ --- the delta-neutral basis trade (spot crypto hedged with
+    short perpetuals) that produces the external yield $s$.
+  \item $M_k$ --- the family of USDe/sUSDe-collateral lending markets,
+    one per row of the table.
+\end{itemize}
+
+The key identification is methodological.  YAM's per-market multiplier
+``Ethena's share of supplied liquidity'' is precisely a supply-share
+attribution: it apportions the debt of market $M_k$ to $V$ in proportion
+to $V$'s lending into $M_k$.  Summed over markets, YAM's $\$1.33$B is
+therefore an \emph{empirical estimate of the $V$-funded part of
+aggregate looped debt} $Y$.  The model's $\varphi = Y/T$ is exactly the
+quantity the thread is reaching for: the fraction of the vault that is
+financing leverage on its own shares.
+
+One accounting point follows immediately.  The headline $\$4.4$B is
+``backing,'' i.e.\ total assets held by $V$; in the model that is
+$T = E + Y$, \emph{including} the looped redeposits.  Backing and
+leverage are not disjoint: part of the $\$4.4$B is USDe minted with
+stablecoins that were themselves borrowed against USDe.  This is a TVL
+double-count---here measured rather than asserted.
+
+\subsection*{Quantification}
+
+Take $T = \$4.4$B and $Y \in [\$1.33,\ \$1.67]$B (pro-rata vs.\ gross).
+Then
+\[
+  \varphi = \frac{Y}{T} \in [0.30,\ 0.38].
+\]
+The remaining model quantities require rates and a leverage level, which
+the thread does not give.  We use the following \emph{illustrative}
+values (not Ethena data): basis yield $s = 9\%$; vault allocation to $L$
+of $\varepsilon = 0.53$ (the complement of the
+$\$2.08\text{B}/\$4.4\text{B} \approx 0.47$ supplied into markets);
+borrow rate $r = 6\%$; representative looper multiplier $M = 6$;
+PT-sUSDe liquidation threshold $\ell = 0.915$.  At $\varphi = 0.30$:
+\begin{align*}
+  r_{\mathrm{eff}} &= r(1-\varphi) = 0.70 \times 6\% = 4.2\%
+    &&\text{(loop rebates $30\%$ of interest)} \\
+  c_v &= s\varepsilon + r\varphi = 4.77\% + 1.80\% = 6.57\% \\
+  \Delta_v &= s\varepsilon - r(1-\varphi) = 4.77\% - 4.20\% = +0.57\%
+    &&\text{(thin positive carry)}
+\end{align*}
+A representative looper earns $A = c_v + M\Delta_v \approx 6.6\%
++ 6 \times 0.57\% \approx 10.0\%$, against $c_v \approx 6.6\%$ for a
+non-looping holder---the loop roughly adds half again the base yield, on
+a carry of only $57$ basis points.
+
+The leverage cap is $\ell/(1-\ell) \approx 10.8$, so $M = 6$ is well
+within range.  In the recursive-loop convention, the two
+collateral-shock thresholds---the liquidation onset
+$\delta_{\mathrm{liq}}$ and the looper-equity wipeout
+$\delta_A$---are
+\[
+  \delta_{\mathrm{liq}} = 1 - \frac{M}{\ell(1+M)}
+    = 1 - \frac{6}{0.915 \times 7} \approx 6.3\%,
+  \qquad
+  \delta_A = \frac{1}{1+M} = \frac{1}{7} \approx 14.3\%.
+\]
+A USDe price decline of ${\approx}\,6\%$ begins liquidating the
+representative looper; a decline of ${\approx}\,14\%$ exhausts looper
+equity and pushes losses into the senior tranche---the non-looping USDe
+holders, i.e.\ the backing itself.
+
+\subsection*{What the static estimate misses}
+
+The $\$1.33$B is a stock, measured at one instant.  Three features of
+Ethena, all invisible to a pro-rata snapshot, are visible to the model.
+
+\medskip\noindent
+\textbf{(i) The collateral is a peg.}  In the model the collateral shock
+$\delta$ is exogenous and ``structural.''  Here $X = {}$USDe, whose price
+is pinned at \$1 by design; a collateral shock \emph{is} a depeg.  The
+attachment arithmetic above shows the buffer is thin---liquidations
+begin near a $6\%$ deviation.  YAM's estimate quantifies how much
+circular leverage exists; it says nothing about the flow that a depeg
+sets off once $\delta > \delta_{\mathrm{liq}}$.
+
+\medskip\noindent
+\textbf{(ii) The external yield can invert.}  $L$ is a perpetual-funding
+basis trade, not a staking carry; $s$ is a funding rate.  When funding
+inverts, $s$ falls and may go negative, so $\Delta_v = s\varepsilon
+- r_{\mathrm{eff}}$ turns negative and the bang-bang optimum flips every
+looper from $m_i = M_i$ to $m_i = 0$.  This is the Resolv USR limit
+($s\varepsilon \to 0$) discussed earlier---reached not by a
+mint-authority compromise but by an ordinary change in funding regime.
+A snapshot taken while $\Delta_v > 0$ reads the loop as benign precisely
+because it is, for now.
+
+\medskip\noindent
+\textbf{(iii) $\varphi$ is not a scalar.}  Each market $M_k$ has its own
+lender share $\varphi_k$ and its own LLTV $\ell_k$, hence its own
+attachment point $\delta_A^k$.  The four rows where Ethena supplies
+essentially all the liquidity---Mantle USDT0, Morpho Ethereum USDtb
+($99.7\%$), Kamino Sentora USDG, Juplend Bitwise USDG---are \emph{fully}
+circular: $V$ is the only lender, the interest rebate within that market
+is total, and there is no third-party capital to absorb a shock.  The
+aggregate $\$1.33$B hides the fact that these markets carry the highest
+effective $\varphi_k$ and unwind first; the cascade is ordered by the
+distribution of $\delta_A^k$, not by a single number.
+
+\medskip\noindent
+In short, the pro-rata estimate answers a stock question---how much of
+the backing is $V$ financing its own leverage.  The model reframes it as
+a set of flow questions: how thin is the carry $\Delta_v$, how
+endogenous and self-reinforcing is $\varphi$, and how fast does the
+stock unwind once a depeg crosses $\delta_{\mathrm{liq}}$.  Those are the
+natural sequel to a static self-lending estimate.
+% TODO: cross-reference the depeg-dynamics section once it is written.
+
+
+%% ----------------------------------------------------------------
 \section{About Paul's tweet}
 
 I would separate the analysis in two separate sections.
