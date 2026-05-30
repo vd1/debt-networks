@@ -1,4 +1,4 @@
-# Telegram thread — LobsterDAO 🦞
+# Telegram thread: LobsterDAO 🦞
 Source: https://t.me/lobsters_chat/574116
 
 ## Target message (#574116)
@@ -287,3 +287,108 @@ Economic risks are independant audits I'm not sure any real time monitoring for 
 I think all others are all pretty much audits.
 
 Only real time threat monitoring I'm familiar with are hypernative, hexagate and a few other providers
+
+---
+
+# Synthesis
+
+The thread is a crowd-sourced enumeration: ivangbi posts 6 base angles for screening a protocol or asset, asks (a) which further angles to add and (b) which services review each. Below is the consolidated answer the thread was building toward but never wrote down. Duplicates are merged, every angle is attributed to the message that introduced it, each is mapped to ivangbi's original 1-6 where it fits, and the right column ties it to the Sigma Labs RFC badge set (see `../ideas.md`) so this note feeds the framework directly.
+
+## Master taxonomy of risk angles
+
+Grouped by andrew_core3's six columns (#574135): financial, security, operational, reputational, regulatory, dependency. The `base` column maps to ivangbi's original 1-6; `new` means the thread added it.
+
+### Security and code
+
+| Angle | base | Source | RFC badge / module |
+|---|---|---|---|
+| Code quality: architecture, simplicity, audits, bug bounties, test coverage, formal verification | 1 | ivangbi | (code-level, outside structural badge set) |
+| Historical pattern match: shared design choices with things that already blew up (1/1 DVN configs, unverified vaults, rounding in share accounting) | new | andrew_core3 #574135 | nutrition-label diff vs known-bad patterns |
+| OpSec of privileged mechanisms: signer distribution, multisig security, not just *who* but *how secure* | 5+ | arpangautam #574122 | `single-EOA-roles`, `governance-mutation` |
+| Frontend integrity: censorship, DNS hijack, supply-chain or malicious update; mitigated by multiple independent frontends (ENS + IPFS) and a CLI | new | Stengarl #574157, taulantxx #574159 | (offchain; no badge yet) |
+| Track record / Lindy: contract age vs attacks suffered | new | nachollanillo #574123 | `young-contract-high-TVL` (inverse) |
+
+### Financial and economic
+
+| Angle | base | Source | RFC badge / module |
+|---|---|---|---|
+| Liquidity of the asset: depth, withdrawal latency, time to maturity | 2 | ivangbi | `liquidity-deterioration` |
+| Leverage / looping ratio | 3 | ivangbi | `leverage-loop` |
+| Economic / mechanism design risk (Terra/Luna class) | new | AJ777Josh #574118 | `circularity`, `supply-velocity-anomaly` |
+| Insolvency and loss-absorption waterfall: who gets rekt first, where plebs sit in the order of wreckage | new | cryptographicas #574121 | DIG (loss path) |
+| Contagion / rehypothecation: the asset behind the asset behind the asset | new | cryptographicas #574121 | `circularity`, YTD recursion |
+| Yield source: emissions vs leverage demand vs being a hidden backstop (Aave umbrella, tranching) | new | xmons #574156 | YTD source attribution |
+| Reward sustainability: base vs incentives, who pays, duration | new | Zdeadex #574172 | YTD source attribution |
+| Antidump mechanics: why hold, why farm, who buys | new | Ceazor #574148 | (tokenomics; no badge) |
+| Friction of entry/exit: bridge fees, deposit/withdraw fees, lockups, opportunity cost | new | Lmk61_102 #574154 | `redemption-queue-mismatch` (partial) |
+| TVL shape: depositor concentration and velocity, not absolute TVL | new | Zdeadex #574172 | `concentrated-custody`, `supply-velocity-anomaly` |
+
+### Asset and backing
+
+| Angle | base | Source | RFC badge / module |
+|---|---|---|---|
+| Asset composition / backing: off-chain, crypto-exogenous, endogenous, delta-hedged | new | Zdeadex #574172 | `RWA-opaque`, `circularity` |
+| Redemption mechanics: withdrawal queue, NAV cycles, redemption risk (esp. RWA / private credit) | new | cryptographicas #574124, Zdeadex #574172 | `redemption-queue-mismatch` |
+| Reserve transparency / attestation cadence | new | Zdeadex #574172 | `RWA-opaque`, `stale-oracle` (attestation gap) |
+| Composability / wrapper risk: 4626 wrappers, vault-of-vault | new | Zdeadex #574172 | `circularity` (cross-protocol) |
+
+### Dependency
+
+| Angle | base | Source | RFC badge / module |
+|---|---|---|---|
+| Third-party dependency: oracles, keepers, curators, on/offchain jobs that influence a position | 4 | ivangbi | `hardcoded-oracle`, `stale-oracle` |
+| Oracle health continuously: freshness, deviation, source diversity | 4 | Zdeadex #574172, AJ777Josh #574118 | `stale-oracle`, `hardcoded-oracle` |
+| Curator quality: governance, legal entity, audit firm (Morpho / Aave style vaults) | 4+ | Zdeadex #574172 | `governance-mutation`, `single-EOA-roles` |
+| Bridge / cross-chain dependency | 4+ | AJ777Josh #574118, Zdeadex #574172 | (offchain custody; no badge) |
+| Reverse dependency: which protocols depend on THIS one, and who will step in to help | new | Ceazor #574148, TheDr_TheDr #574150 | (exposure graph; not yet modeled) |
+| Inherited exposure / incident history (Kelp / Resolv style) | 6+ | Zdeadex #574172 | nutrition-label inheritance |
+
+### Operational
+
+| Angle | base | Source | RFC badge / module |
+|---|---|---|---|
+| Operational risk: key management, signer distribution, incident-response readiness | new | andrew_core3 #574135 | `single-EOA-roles` |
+| Emergency response: pauses (auto or manual), insurance, treasury / recovery funds | new | Ceazor #574148 | `governance-mutation` (pause authority) |
+| Admin access controls: who can mint, freeze, block assets, add collateral | 5 | ivangbi | `single-EOA-roles`, `governance-mutation` |
+
+### Regulatory, legal, reputational
+
+| Angle | base | Source | RFC badge / module |
+|---|---|---|---|
+| Legal: creditor-debtor relationship; bridge / jurisdiction dependency that can break a position with no hack (Kelp L2, Resolv) | 6 | ivangbi | (offchain; no badge) |
+| Issuer + counterparty quality (RWA: who actually issues), counterparty risk | 6+ | AJ777Josh #574118, Zdeadex #574172 | `RWA-opaque` |
+| Custodian / regulatory wrapper / KYC gate | 6+ | Zdeadex #574172 | `concentrated-custody` |
+| Privacy: onchain traceability, frontrun / sandwich exposure, offchain KYC / IP / wallet surveillance | new | dbadol #574194 | (offchain; no badge) |
+| Reputational: scammer founders, KOL shilling, AI-generated team photos, vibe-coded frontend | new | JoeWait #574165, gspdnsobaka #574117 | (qualitative screen) |
+
+### Framing notes from the thread
+
+- **Separate asset risk from protocol risk** (safetylast #574162): the same protocol can carry low protocol risk and high asset risk, and the two are scored differently.
+- **Decentralized, adversarially-validated data** (TheDr_TheDr #574147, andrew_core3 #574145, #574155): a single central team cannot keep all of this current; projects should submit and correct their own data behind a validation layer with proofs linked to authors.
+
+## Services and dashboards (answer to question b)
+
+| Tool | Angles it covers | Source |
+|---|---|---|
+| DeFiscan | (5) admin controls; (4) dependencies to an extent | ivangbi, floowp #574151 |
+| DeFi Saver, Chaos Labs | (2) liquidity, (3) leverage | ivangbi |
+| Credora | composite one-score-per-protocol | ivangbi #574144 (as a contrast) |
+| herd.eco | architecture visualization | xzhvyr #574133 |
+| core3.io (`/methodology`) | financial / security / operational / reputational / regulatory / dependency decomposition (MVP) | andrew_core3 #574138 |
+| infiniFi Risk Assessment Framework (Notion) | full 1-6 framework, ~1:1 with ivangbi's list | RobAnon #574128 |
+| analytics.philidor.io | asset composition, redemption, oracle health, the angles 7-18 it lists | Zdeadex #574172, #574210 |
+| risklayer.online, defipunkd.com, pigi.finance, xerberus.io, risk.zyf.ai, pharos.watch, llamarisk.com | general protocol/asset risk dashboards | AntonAkentiev #574170 |
+| DefiLlama TRF, Blockworks TTF, Aragon OTF | transparency / onchain-enforceability frameworks | 0xJMG #574166 |
+| Hypernative, Hexagate | real-time threat monitoring | AJ777Josh #574131 |
+| Seal 911, third-party opsec auditors | opsec review | arpangautam #574122 |
+
+## Gaps with no tooling (called out in-thread)
+
+- **Real-time economic-risk monitoring** does not exist; economic risk is handled by one-off independent audits (AJ777Josh #574131).
+- **Legal** is too broad to track today; needs splitting into user legal rights vs regulatory risk vs cross-jurisdictional, and tooling is expected only as Clarity-style requirements land (floowp #574151).
+- **Friction of entry/exit** (fees, lockups, opportunity cost) has no dedicated tool (Lmk61_102 #574154).
+- **Reverse dependency / exposure graph** (who depends on this protocol) is the angle TheDr_TheDr #574150 is building and considers least served.
+
+## What this adds for the Sigma Labs RFC
+
+Most structural angles in the thread already map onto an existing badge or module (oracle health, leverage loops, circularity, supply velocity, concentration, redemption queues, privileged roles). The angles with **no current badge** are the candidate Phase-2 additions: reverse-dependency exposure graph, frontend / delivery integrity, friction of entry/exit, and the offchain legal / custody / privacy cluster. The thread also independently arrives at the framework's own design stance: separate asset from protocol scoring, and prefer decentralized self-reported data behind adversarial validation over a single central scorer.
