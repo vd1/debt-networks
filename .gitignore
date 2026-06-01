@@ -6,3 +6,7 @@
 *.out
 *.toc
 *.synctex.gz
+
+# Claude Code local state
+.claude/worktrees/
+.claude/settings.local.json
