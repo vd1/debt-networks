@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sigma Labs x Bluprynt - Post-Call Alignment</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script>
+  (function () {
+    var t = localStorage.getItem('slideTheme');
+    if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  :root{
+    --bg:#0f1115;
+    --surface:#171a20;
+    --surface-2:#20242c;
+    --rule:#343a45;
+    --rule-soft:#242a33;
+    --text:#f2f4f0;
+    --muted:#a7ada4;
+    --blue:#1b7cff;
+    --lime:#b9d46a;
+    --amber:#f3b65b;
+    --red:#ff6d6a;
+    --shadow:0 24px 70px rgba(0,0,0,.38);
+    color-scheme:dark;
+  }
+  :root[data-theme="light"]{
+    --bg:#f6f7f4;
+    --surface:#ffffff;
+    --surface-2:#eef1eb;
+    --rule:#cdd3c7;
+    --rule-soft:#e2e6df;
+    --text:#11151b;
+    --muted:#5e675f;
+    --blue:#0767e8;
+    --lime:#5e7d13;
+    --amber:#9a5b0c;
+    --red:#c73936;
+    --shadow:0 24px 70px rgba(17,21,27,.12);
+    color-scheme:light;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+    transition:background-color .35s ease,color .35s ease;
+  }
+  .deck{display:flex;height:100vh;transition:none;}
+  body.ready .deck{transition:transform .58s cubic-bezier(.66,0,.34,1);}
+  .slide{width:100vw;height:100vh;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .frame{
+    position:relative;
+    width:1280px;
+    height:800px;
+    flex:none;
+    transform:scale(var(--s,1));
+    transform-origin:center;
+    background:
+      linear-gradient(90deg, color-mix(in srgb,var(--rule-soft) 35%,transparent) 1px, transparent 1px),
+      linear-gradient(0deg, color-mix(in srgb,var(--rule-soft) 35%,transparent) 1px, transparent 1px),
+      var(--bg);
+    background-size:80px 80px;
+    padding:58px 64px;
+    overflow:hidden;
+    transition:background-color .35s ease;
+  }
+  .frame.plain{background:var(--bg);}
+  .frame.with-shot{padding:0;background:#0f1115;}
+  .shot-bg{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    opacity:.42;
+    filter:saturate(.9) contrast(1.05);
+  }
+  :root[data-theme="light"] .shot-bg{opacity:.24;}
+  .shade{position:absolute;inset:0;background:linear-gradient(90deg,var(--bg) 0%,color-mix(in srgb,var(--bg) 84%,transparent) 48%,color-mix(in srgb,var(--bg) 36%,transparent) 100%);}
+  .shade.bottom{background:linear-gradient(0deg,var(--bg) 0%,color-mix(in srgb,var(--bg) 82%,transparent) 42%,color-mix(in srgb,var(--bg) 18%,transparent) 100%);}
+  .content{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;}
+  .center{flex:1;display:flex;flex-direction:column;justify-content:center;}
+  .topline{display:flex;justify-content:space-between;align-items:center;margin-bottom:22px;}
+  .kicker{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    font-weight:700;
+    text-transform:uppercase;
+    color:var(--lime);
+    letter-spacing:0;
+  }
+  .date{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+  h1{font-size:72px;line-height:1.02;font-weight:800;letter-spacing:0;max-width:980px;}
+  h2{font-size:46px;line-height:1.08;font-weight:800;letter-spacing:0;max-width:940px;}
+  h3{font-size:24px;line-height:1.18;font-weight:800;letter-spacing:0;}
+  p{font-size:21px;line-height:1.46;color:var(--muted);max-width:850px;}
+  .lede{font-size:27px;line-height:1.36;color:var(--text);max-width:900px;margin-top:24px;}
+  .small{font-size:15px;line-height:1.42;color:var(--muted);}
+  .mini{font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.35;color:var(--muted);}
+  .blue{color:var(--blue);}
+  .lime{color:var(--lime);}
+  .amber{color:var(--amber);}
+  .red{color:var(--red);}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:28px;}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  .grid-asym{display:grid;grid-template-columns:1.05fr .95fr;gap:34px;align-items:stretch;}
+  .panel{
+    background:color-mix(in srgb,var(--surface) 92%,transparent);
+    border:1px solid var(--rule);
+    border-radius:8px;
+    box-shadow:var(--shadow);
+    padding:24px;
+  }
+  .panel.tight{padding:18px;}
+  .panel h3{margin-bottom:12px;}
+  .panel p{font-size:18px;}
+  .pill-row{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px;}
+  .pill{
+    display:inline-flex;
+    align-items:center;
+    min-height:32px;
+    border:1px solid var(--rule);
+    border-radius:999px;
+    padding:6px 11px;
+    color:var(--text);
+    background:var(--surface-2);
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    white-space:nowrap;
+  }
+  .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:28px;}
+  .stat{border:1px solid var(--rule);border-radius:8px;background:var(--surface);padding:18px;}
+  .stat .n{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:800;color:var(--lime);}
+  .stat .l{font-size:13px;color:var(--muted);margin-top:7px;}
+  .list{display:flex;flex-direction:column;gap:13px;margin-top:20px;}
+  .item{display:grid;grid-template-columns:22px 1fr;gap:12px;align-items:start;color:var(--muted);font-size:18px;line-height:1.38;}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--lime);margin-top:8px;}
+  .diagram{display:flex;align-items:center;justify-content:center;height:100%;}
+  .node{
+    min-width:140px;
+    border:1px solid var(--rule);
+    border-radius:8px;
+    padding:16px 18px;
+    background:var(--surface);
+    text-align:center;
+    box-shadow:var(--shadow);
+  }
+  .node strong{display:block;font-size:17px;}
+  .node span{display:block;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:6px;}
+  .flow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+  .arrow{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:24px;}
+  .tree{
+    font-family:'JetBrains Mono',monospace;
+    font-size:15px;
+    line-height:1.54;
+    color:var(--text);
+    white-space:pre;
+    overflow:hidden;
+  }
+  .tree .dim{color:var(--muted);}
+  .tree .risk{color:var(--amber);}
+  .tree .stop{color:var(--red);}
+  .caption{position:absolute;left:64px;bottom:42px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+  .screenshot{
+    width:100%;
+    height:410px;
+    object-fit:cover;
+    object-position:top left;
+    border:1px solid var(--rule);
+    border-radius:8px;
+    box-shadow:var(--shadow);
+  }
+  .ytd-shot{
+    width:100%;
+    height:430px;
+    object-fit:cover;
+    object-position:top left;
+    border:1px solid var(--rule);
+    border-radius:8px;
+    box-shadow:var(--shadow);
+  }
+  .split-shot{display:grid;grid-template-columns:.95fr 1.05fr;gap:32px;align-items:center;height:100%;}
+  .callout{
+    border-left:4px solid var(--blue);
+    padding-left:20px;
+    margin-top:22px;
+    max-width:850px;
+  }
+  .callout p{color:var(--text);}
+  .tag{
+    display:inline-flex;
+    align-items:center;
+    border-radius:6px;
+    padding:7px 10px;
+    background:color-mix(in srgb,var(--blue) 18%,var(--surface));
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    border:1px solid color-mix(in srgb,var(--blue) 42%,var(--rule));
+  }
+  .footer-note{margin-top:22px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+  .rise{opacity:1;transform:translateY(0);}
+  @keyframes rise{from{transform:translateY(12px);}to{transform:translateY(0);}}
+  .slide.is-active .rise{animation:rise .42s cubic-bezier(.2,.7,.25,1) var(--d,0s) both;}
+
+  .nav{
+    position:fixed;
+    bottom:22px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:20;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:7px 9px;
+    background:color-mix(in srgb,var(--bg) 86%,transparent);
+    border:1px solid var(--rule);
+    border-radius:8px;
+    backdrop-filter:blur(8px);
+  }
+  .nav button{
+    width:38px;
+    height:34px;
+    flex:none;
+    cursor:pointer;
+    background:var(--surface);
+    border:1px solid var(--rule);
+    color:var(--text);
+    border-radius:6px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:18px;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:border-color .18s,color .18s,background .18s;
+  }
+  .nav button:hover{border-color:var(--blue);color:var(--blue);}
+  .dots{display:flex;gap:8px;}
+  .dots b{width:7px;height:7px;border-radius:50%;background:var(--rule);transition:background .25s,transform .25s;}
+  .dots b.on{background:var(--lime);transform:scale(1.2);}
+  .count{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);}
+  .theme-btn{font-size:15px;}
+
+  @media print{
+    @page{size:landscape;margin:0;}
+    body{overflow:visible;}
+    .nav{display:none;}
+    .deck{display:block;width:auto;height:auto;transform:none!important;}
+    .slide{width:100%;height:auto;display:block;page-break-after:always;}
+    .frame{transform:none!important;page-break-inside:avoid;}
+    .rise{opacity:1!important;transform:none!important;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .deck{transition:none;}
+    .slide.is-active .rise{animation:none;}
+    .rise{opacity:1;transform:none;}
+  }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <div class="slide is-active">
+    <section class="frame with-shot">
+      <img class="shot-bg" src="assets/sigmalabs-vault-full.png" alt="" />
+      <div class="shade"></div>
+      <div class="content" style="padding:58px 64px;">
+        <div class="topline rise" style="--d:.04s">
+          <div class="kicker">Sigma Labs x Bluprynt</div>
+          <div class="date">2026-06-22 / post-call</div>
+        </div>
+        <div class="center">
+          <h1 class="rise" style="--d:.14s">Post-call alignment: one graph from yield to legal claim.</h1>
+          <p class="lede rise" style="--d:.26s">What the conversation established between Sigma's live dependency mapping and Bluprynt's issuer, collateral, and disclosure layer.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.05s">Call outcome</div>
+          <div class="date rise" style="--d:.1s">Shared thesis</div>
+        </div>
+        <div class="center">
+          <h2 class="rise" style="--d:.14s">Both sides converged on the same missing layer in tokenized RWA risk.</h2>
+          <div class="grid-3" style="margin-top:36px;">
+            <div class="panel rise" style="--d:.24s">
+              <h3>Sigma maps live dependencies</h3>
+              <p>YTD opens vaults, collateral, lending markets, wrappers, loops, queues, and exit paths recursively.</p>
+            </div>
+            <div class="panel rise" style="--d:.34s">
+              <h3>Bluprynt resolves off-chain claims</h3>
+              <p>Asset graph and Proof of Collateral add issuer, legal, collateral, custody, and disclosure facts.</p>
+            </div>
+            <div class="panel rise" style="--d:.44s">
+              <h3>The market wants reporting</h3>
+              <p>Licensed issuers and regulators need repeatable, automated disclosure across on-chain and off-chain artifacts.</p>
+            </div>
+          </div>
+          <div class="pill-row rise" style="--d:.54s">
+            <span class="pill">tokenized RWAs</span>
+            <span class="pill">asset graph</span>
+            <span class="pill">Proof of Collateral</span>
+            <span class="pill">YTD/DIG</span>
+            <span class="pill">automated reporting</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.05s">What Sigma showed</div>
+          <div class="date rise" style="--d:.1s">YTD</div>
+        </div>
+        <div class="grid-asym center">
+          <div>
+            <h2 class="rise" style="--d:.14s">YTD maps what yield depends on, recursively.</h2>
+            <p class="lede rise" style="--d:.24s">The output is not a vault label or a stablecoin label. It is a live dependency tree across allocations, collateral, markets, wrappers, queues, redemption paths, and off-chain boundaries.</p>
+            <div class="callout rise" style="--d:.34s">
+              <p>The call emphasized a practical point: once the tree exists, risk propagation, exit analysis, and high-cadence monitoring can sit on top.</p>
+            </div>
+          </div>
+          <div class="panel tight rise" style="--d:.3s">
+            <img class="ytd-shot" src="assets/ytd-lagoon-tree.png" alt="Sigma Labs YTD view showing NAV decomposed into source yield tree" />
+            <p class="mini" style="margin-top:12px;">YTD view: NAV decomposed to source, with underlying markets, rates, contribution, and collateral metadata.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame with-shot">
+      <img class="shot-bg" src="assets/sigmalabs-vault-full.png" alt="" />
+      <div class="shade bottom"></div>
+      <div class="content" style="padding:58px 64px;">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.05s">Sigma examples</div>
+          <div class="date rise" style="--d:.1s">Vaults and Morpho markets</div>
+        </div>
+        <div style="margin-top:auto;max-width:760px;margin-bottom:86px;">
+          <h2 class="rise" style="--d:.16s">The demo used Sigma's own vault, then moved into live market structure.</h2>
+          <p class="lede rise" style="--d:.26s">The useful signal was the shape of the tree: a deposit can become carry exposure, a Morpho vault branch, idle assets, collateralized lending, or another nested position.</p>
+          <div class="stat-grid rise" style="--d:.36s">
+            <div class="stat"><div class="n">Vault</div><div class="l">own Lagoon example</div></div>
+            <div class="stat"><div class="n">Morpho</div><div class="l">top market scans</div></div>
+            <div class="stat"><div class="n">Loops</div><div class="l">recursive exposure paths</div></div>
+            <div class="stat"><div class="n">Live</div><div class="l">adapter-driven updates</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.05s">Where the graph stops</div>
+          <div class="date rise" style="--d:.1s">Off-chain claims</div>
+        </div>
+        <div class="center">
+          <h2 class="rise" style="--d:.14s">The on-chain tree becomes most valuable when it hits a non-on-chain claim.</h2>
+          <div class="grid-3" style="margin-top:34px;">
+            <div class="panel rise" style="--d:.24s">
+              <span class="tag">Private credit</span>
+              <h3 style="margin-top:18px;">Issuer dependency</h3>
+              <p>A lending or collateral node can terminate in a borrower, vehicle, legal wrapper, or private asset pool.</p>
+            </div>
+            <div class="panel rise" style="--d:.34s">
+              <span class="tag">Collateral facts</span>
+              <h3 style="margin-top:18px;">Disclosure boundary</h3>
+              <p>At that point the next input is certification, collateral documents, reserve claims, or redemption terms.</p>
+            </div>
+            <div class="panel rise" style="--d:.44s">
+              <span class="tag">Bluprynt fit</span>
+              <h3 style="margin-top:18px;">Attested node</h3>
+              <p>Bluprynt can attach issuer identity, disclosure status, collateral evidence, and attestation freshness.</p>
+            </div>
+          </div>
+          <div class="footer-note rise" style="--d:.54s">This was the strongest shared point in the call: the boundary is not a dead end, it is the graph join.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.05s">Bluprynt response</div>
+          <div class="date rise" style="--d:.1s">Asset graph + Proof of Collateral</div>
+        </div>
+        <div class="grid-asym center">
+          <div>
+            <h2 class="rise" style="--d:.14s">Bluprynt saw the combination as regulator-grade disclosure.</h2>
+            <p class="lede rise" style="--d:.24s">Their asset graph covers attached asset and vault nodes. Proof of Collateral adds issuer-provided off-chain facts such as legal wrapper, redemption rights, custody, and collateral structure.</p>
+            <div class="stat-grid rise" style="--d:.34s">
+              <div class="stat"><div class="n">Issuers</div><div class="l">licensed RWA teams</div></div>
+              <div class="stat"><div class="n">Regs</div><div class="l">Bermuda MA, FCA, central banks</div></div>
+              <div class="stat"><div class="n">Reports</div><div class="l">monthly disclosure need</div></div>
+              <div class="stat"><div class="n">Venues</div><div class="l">exchange diligence path</div></div>
+            </div>
+          </div>
+          <div class="panel tight rise" style="--d:.28s">
+            <div class="tree">Bluprynt layer
+|- asset disclosure form
+|  |- legal wrapper
+|  |- redemption rights
+|  |- reserve or collateral facts
+|  `- issuer liability
+|- asset graph
+|  `- token / vault / node links
+`- reporting workflow
+   |- issuer artifacts
+   |- regulator package
+   `- compliance posture</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.05s">Technical split</div>
+          <div class="date rise" style="--d:.1s">Adapters</div>
+        </div>
+        <div class="grid-asym center">
+          <div>
+            <h2 class="rise" style="--d:.14s">The clean split is token/vault standards on one side, yield traversal on the other.</h2>
+            <p class="lede rise" style="--d:.24s">Both teams already think in adapters. The call clarified that new vaults and protocols will still require specific integration work.</p>
+            <div class="callout rise" style="--d:.34s">
+              <p>The joint product should not flatten these differences. It should make each adapter responsible for the part it can verify best.</p>
+            </div>
+          </div>
+          <div class="panel tight rise" style="--d:.3s">
+            <div class="tree">Adapter responsibilities
+|- Bluprynt
+|  |- token standards
+|  |- vault standards
+|  |- off-chain disclosures
+|  `- attestation semantics
+`- Sigma
+   |- protocol traversal
+   |- yield recursion
+   |- exit markets
+   `- risk propagation</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame with-shot">
+      <img class="shot-bg" src="assets/bluprynt-home.png" alt="" />
+      <div class="shade"></div>
+      <div class="content" style="padding:58px 64px;">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.05s">The merge</div>
+          <div class="date rise" style="--d:.1s">Graph join, not dashboard glue</div>
+        </div>
+        <div class="center" style="max-width:880px;">
+          <h2 class="rise" style="--d:.14s">The shared product is a graph join, not two dashboards beside each other.</h2>
+          <p class="lede rise" style="--d:.24s">Sigma finds the live dependency and risk path. Bluprynt attaches the issuer, disclosure, credential, custody, collateral, and revocation state behind the off-chain node.</p>
+          <div class="grid-3" style="margin-top:34px;">
+            <div class="panel rise" style="--d:.34s"><h3>On-chain path</h3><p>Vault, lending, collateral, nested token, liquidation, and exit-market dependencies.</p></div>
+            <div class="panel rise" style="--d:.44s"><h3>Off-chain claim</h3><p>Issuer, legal wrapper, collateral description, redemption rights, and custody context.</p></div>
+            <div class="panel rise" style="--d:.54s"><h3>Monitored state</h3><p>Freshness, revocation, attestation source, and reporting status become risk inputs.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.05s">Commercial paths</div>
+          <div class="date rise" style="--d:.1s">Raised, not agreed</div>
+        </div>
+        <div class="grid-asym center">
+          <div>
+            <h2 class="rise" style="--d:.14s">Bluprynt put several structures on the table. The right answer depends on pilot scope.</h2>
+            <div class="list rise" style="--d:.24s">
+              <div class="item"><span class="dot"></span><span>Exclusive integration into Bluprynt was mentioned.</span></div>
+              <div class="item"><span class="dot"></span><span>Acquisition of the relevant technology was explicitly floated.</span></div>
+              <div class="item"><span class="dot"></span><span>Revenue share or reciprocal integration are also viable paths.</span></div>
+              <div class="item"><span class="dot"></span><span>No structure should be selected until the first asset set and graph join are concrete.</span></div>
+            </div>
+          </div>
+          <div class="panel diagram rise" style="--d:.3s">
+            <div class="flow">
+              <div class="node"><strong>Scope</strong><span>asset set</span></div>
+              <div class="arrow">-></div>
+              <div class="node"><strong>Pilot</strong><span>graph join</span></div>
+              <div class="arrow">-></div>
+              <div class="node"><strong>Terms</strong><span>structure</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.05s">Next steps</div>
+          <div class="date rise" style="--d:.1s">Post-call follow-up</div>
+        </div>
+        <div class="center">
+          <h2 class="rise" style="--d:.14s">The next move is a narrow pilot, with Plume Nest as the best named candidate.</h2>
+          <div class="grid-2" style="margin-top:34px;">
+            <div class="panel rise" style="--d:.24s">
+              <h3>From Bluprynt</h3>
+              <div class="list">
+                <div class="item"><span class="dot"></span><span>Shared Google Doc with edit access.</span></div>
+                <div class="item"><span class="dot"></span><span>Share customer pipeline details under the signed MNDA.</span></div>
+                <div class="item"><span class="dot"></span><span>Candidate tokens, customers, and vaults for a focused demo.</span></div>
+                <div class="item"><span class="dot"></span><span>Plume Nest details if that becomes the pilot path.</span></div>
+              </div>
+            </div>
+            <div class="panel rise" style="--d:.34s">
+              <h3>From Sigma</h3>
+              <div class="list">
+                <div class="item"><span class="dot"></span><span>Run YTD against Bluprynt's selected asset or vault.</span></div>
+                <div class="item"><span class="dot"></span><span>Identify off-chain boundary nodes and required disclosures.</span></div>
+                <div class="item"><span class="dot"></span><span>Propose graph-join schema and adapter responsibilities.</span></div>
+                <div class="item"><span class="dot"></span><span>Hold commercial structure until the technical pilot is scoped.</span></div>
+              </div>
+            </div>
+          </div>
+          <p class="footer-note rise" style="--d:.44s">Plume Nest was named because it is an active Bluprynt customer, uses BoringVault-style infrastructure, and wants this visibility.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+</div>
+
+<nav class="nav" aria-label="Slide navigation">
+  <button id="prev" aria-label="Previous slide">&lsaquo;</button>
+  <span class="dots" id="dots" aria-hidden="true"></span>
+  <span class="count" id="count">01 / 01</span>
+  <button id="next" aria-label="Next slide">&rsaquo;</button>
+  <button id="theme" class="theme-btn" aria-label="Toggle light/dark">&#9728;</button>
+</nav>
+
+<script>
+  (function () {
+    var W = 1280, H = 800;
+    var deck = document.getElementById('deck');
+    var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+    var prev = document.getElementById('prev');
+    var next = document.getElementById('next');
+    var count = document.getElementById('count');
+    var dotsEl = document.getElementById('dots');
+    var themeB = document.getElementById('theme');
+    var N = slides.length, idx = 0;
+    var dots = slides.map(function () {
+      var b = document.createElement('b');
+      dotsEl.appendChild(b);
+      return b;
+    });
+
+    function fit() {
+      var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+      document.documentElement.style.setProperty('--s', s);
+    }
+    fit();
+    window.addEventListener('resize', fit);
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function show(i) {
+      idx = (i % N + N) % N;
+      deck.style.transform = 'translateX(' + (-idx * 100) + 'vw)';
+      slides.forEach(function (s, k) { s.classList.toggle('is-active', k === idx); });
+      dots.forEach(function (d, k) { d.classList.toggle('on', k === idx); });
+      count.textContent = pad(idx + 1) + ' / ' + pad(N);
+      if (location.hash !== '#' + (idx + 1)) history.replaceState(null, '', '#' + (idx + 1));
+    }
+    prev.addEventListener('click', function () { show(idx - 1); });
+    next.addEventListener('click', function () { show(idx + 1); });
+    dots.forEach(function (d, k) { d.addEventListener('click', function () { show(k); }); });
+    window.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') show(idx + 1);
+      if (e.key === 'ArrowLeft' || e.key === 'PageUp') show(idx - 1);
+      if (e.key === 'Home') show(0);
+      if (e.key === 'End') show(N - 1);
+      if (e.key.toLowerCase() === 'f') {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
+      }
+    });
+    var x0 = null;
+    window.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, {passive:true});
+    window.addEventListener('touchend', function (e) {
+      if (x0 == null) return;
+      var dx = e.changedTouches[0].clientX - x0;
+      if (Math.abs(dx) > 45) show(idx + (dx < 0 ? 1 : -1));
+      x0 = null;
+    }, {passive:true});
+    themeB.addEventListener('click', function () {
+      var root = document.documentElement;
+      var t = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', t);
+      localStorage.setItem('slideTheme', t);
+    });
+    var start = parseInt(location.hash.replace('#',''), 10);
+    show(start && start >= 1 && start <= N ? start - 1 : 0);
+    deck.getBoundingClientRect();
+    setTimeout(function () { document.body.classList.add('ready'); }, 700);
+  })();
+</script>
+</body>
+</html>

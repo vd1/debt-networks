@@ -36,15 +36,93 @@
 \begin{document}
 \maketitle
 
-\begin{abstract}
-A vault that lends against its own shares creates an interest-rebate
+% \begin{abstract}
+\section{Why use vault shares as collateral}
+Imagine a vault that lends against its own shares. For instance
+lending ETH on an ad hoc Morpho market against rcETH or sigmaETH. 
+
+A common situation is that where an exogenous LP (not the vault) 
+lends on the back of the vault shares and thereby allows the rcETH investors to leverage
+their yield with the usual formula $s_V + M c$.
+
+Since collateral (rcETH) and loan (ETH) share the same unit, the carry
+$c=s_V-b$ is a spread, not an exchange-rate bet. A looper at multiplier
+$M$ (debt over equity) holds $(1+M)e$ of rcETH against $Me$ of ETH debt,
+so its net ETH exposure is
+\[
+  (1+M)e-Me=e,
+\]
+its own equity. Leverage amplifies the carry, not the price exposure: the
+looped part is self-financed in ETH and stays delta-neutral. This is
+leveraged staking in its native form.
+
+LPs to the market will earn a supply rate $ub$ which has 
+to stay below the original's vault $c=s_V - b > 0$.
+
+(But there is no maturity. So a single large lender is hostage to the looper;
+there should an unwinding agreement, a kind of soft maturity, or callable maturity.)
+
+Assuming the lending market is at steady state $b^\star$, $u^\star$, the  joint profitability 
+window reads: (neglecting the variabilty in exchage rate!)
+\[
+\begin{array}{lll}
+  s_V >_{looper} b^\star >_{lender} s_0/u^\star
+  % u^\star b^\star > s_0\\
+  % s_V > b^\star
+\end{array}
+\]
+where $s_0$ is the global ETH lending rate. In particular,
+the bargaining window is non-empty iff $s_V>s_0/u^\star$.
+
+Currently $s_V$ is $3.75\%$, and $b=2.12\%$ (both in ETH).
+Hence $c\sim 1.5\%$.
+
+The looper's levered yield $A=s_V+Mc$ then reads, at the borrow-rate floor
+$b=2.12\%$ ($c=1.63\%$) and at a more realistic steady state where looper
+demand has bid $b$ up toward $3\%$ ($c=0.75\%$):
+\[
+\begin{array}{c|cc}
+  M & A\ (c=1.63\%) & A\ (c=0.75\%)\\
+  \hline
+  5  & 11.9\% & 7.5\%\\
+  10 & 20.0\% & 11.3\%\\
+  15 & 28.2\% & 15.0\%
+\end{array}
+\]
+all in ETH and genuinely earned, since the looper keeps ETH exposure only
+on its equity $e$.
+
+On the lender side the outside option is the global ETH rate $s_0=1.46\%$,
+so the window opens once $u^\star>s_0/s_V=1.46/3.75\approx 39\%$. At
+$u^\star=80\%$ the floor is $s_0/u^\star=1.83\%$, so any
+$b^\star\in(1.83\%,\,3.75\%)$, a band about $190$ bp wide, leaves both
+sides ahead of their alternatives. This is far more robust than a market
+where the lender's alternative is a stablecoin rate close to $s_V$.
+
+The risk migrates with the denomination. Liquidation is governed by the
+rcETH/ETH exchange rate, not by ETH against the dollar: the collateral
+impairs only if rcETH underperforms ETH (slashing, a contract loss, a
+wrapper depeg). The attachment point $\delta_A=1/(1+M)$ then measures how
+far that basis may move before junior equity is wiped; since rcETH/ETH
+normally carries near-zero volatility, the breach probability
+$\Phi(-\delta_A/(\sigma\sqrt\tau))$ collapses and multipliers up to
+$\ell/(1-\ell)$ stay sustainable. The cost is a short-volatility profile:
+the basis sits flat until a vault-specific event makes it gap, at which
+point a high-$M$ position exhausts its thin buffer at once and exit
+liquidity vanishes exactly when it is needed.
+
+Which in turn
+constrains the max multiplier $M$ debt/equity on the looper side.
+
+\subsection{The interest-rebate loop}
+In other words, shares-as-collateral creates an interest-rebate
 loop: borrowers pay interest to the vault, then recover part of that
 interest through their vault shares.  This lowers their effective borrow
 cost, creates self-reinforcing leverage, and can make borrower demand
 non-monotone in the borrow rate.  The note derives the mechanism first
 in a two-player example, then in a heterogeneous-borrower equilibrium,
 and closes with a tranche interpretation of the resulting risk transfer.
-\end{abstract}
+% \end{abstract}
 
 We are given a vault $V$ where players can deposit a stable $S$ (e.g.\ USDC) 
 for a share token $X$ (e.g.\ syrupUSDC).
