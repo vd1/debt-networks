@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Sigma Labs x Bluprynt - Deal Structure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<script>
+  (function () {
+    var t = localStorage.getItem('slideTheme');
+    if (!t) t = matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+  })();
+</script>
+<style>
+  :root{
+    --bg:#0e1114;
+    --surface:#171c20;
+    --surface-2:#20262b;
+    --rule:#354049;
+    --rule-soft:#222b31;
+    --text:#f3f6ef;
+    --muted:#a6aea5;
+    --green:#b8d56b;
+    --blue:#55a7ff;
+    --amber:#f1b15d;
+    --red:#ff736e;
+    --paper:#edf1e8;
+    --ink:#101417;
+    --shadow:0 22px 68px rgba(0,0,0,.34);
+    color-scheme:dark;
+  }
+  :root[data-theme="light"]{
+    --bg:#f5f7f1;
+    --surface:#ffffff;
+    --surface-2:#e9eee4;
+    --rule:#c8d1c3;
+    --rule-soft:#dfe6db;
+    --text:#11161a;
+    --muted:#5d675f;
+    --green:#5c7e16;
+    --blue:#086ac9;
+    --amber:#995d10;
+    --red:#c63f3b;
+    --paper:#11161a;
+    --ink:#f5f7f1;
+    --shadow:0 22px 68px rgba(17,22,26,.12);
+    color-scheme:light;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+    transition:background-color .35s ease,color .35s ease;
+  }
+
+  .deck{display:flex;height:100vh;transition:none;}
+  body.ready .deck{transition:transform .58s cubic-bezier(.66,0,.34,1);}
+  .slide{width:100vw;height:100vh;flex:none;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+  .frame{
+    position:relative;
+    width:1280px;
+    height:800px;
+    flex:none;
+    transform:scale(var(--s,1));
+    transform-origin:center;
+    background:
+      linear-gradient(90deg, color-mix(in srgb,var(--rule-soft) 42%,transparent) 1px, transparent 1px),
+      linear-gradient(0deg, color-mix(in srgb,var(--rule-soft) 42%,transparent) 1px, transparent 1px),
+      var(--bg);
+    background-size:80px 80px;
+    padding:56px 64px;
+    overflow:hidden;
+    transition:background-color .35s ease;
+  }
+  .content{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;}
+  .center{flex:1;display:flex;flex-direction:column;justify-content:center;}
+  .topline{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;}
+  .kicker{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    font-weight:700;
+    color:var(--green);
+    text-transform:uppercase;
+    letter-spacing:0;
+  }
+  .tag{
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    color:var(--muted);
+    border:1px solid var(--rule);
+    background:var(--surface);
+    border-radius:999px;
+    padding:7px 11px;
+  }
+  .tags{display:flex;align-items:center;gap:10px;}
+  .tag.internal{color:var(--red);border-color:color-mix(in srgb,var(--red) 50%,var(--rule));}
+  .tag.shared{color:var(--green);border-color:color-mix(in srgb,var(--green) 50%,var(--rule));}
+
+  .flow4{display:grid;grid-template-columns:1fr 36px 1fr 36px 1fr 36px 1fr;gap:8px;align-items:stretch;margin-top:30px;}
+  .gnode{border:1px solid var(--rule);border-radius:8px;background:var(--surface);padding:18px;min-height:158px;display:flex;flex-direction:column;gap:9px;}
+  .gnode.join{border-color:var(--amber);background:color-mix(in srgb,var(--amber) 10%,var(--surface));}
+  .gnode .own{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;text-transform:uppercase;}
+  .gnode strong{font-size:19px;line-height:1.14;}
+  .gnode .det{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);line-height:1.42;}
+
+  .sheet{display:grid;grid-template-columns:210px 1fr;border:1px solid var(--rule);border-radius:8px;overflow:hidden;margin-top:22px;background:var(--surface);}
+  .sheet .k,.sheet .v{padding:11px 16px;border-bottom:1px solid var(--rule-soft);font-size:15px;line-height:1.3;}
+  .sheet .k{font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;color:var(--green);background:var(--surface-2);font-weight:700;display:flex;align-items:center;border-right:1px solid var(--rule);}
+  .sheet .v{color:var(--text);display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+  .pill-anchor{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--amber);border:1px solid color-mix(in srgb,var(--amber) 50%,var(--rule));border-radius:999px;padding:2px 7px;}
+
+  h1{font-size:70px;line-height:1.02;font-weight:800;letter-spacing:0;max-width:980px;}
+  h2{font-size:45px;line-height:1.08;font-weight:800;letter-spacing:0;max-width:980px;}
+  h3{font-size:23px;line-height:1.16;font-weight:800;letter-spacing:0;}
+  p{font-size:21px;line-height:1.43;color:var(--muted);max-width:900px;}
+  .lede{font-size:28px;line-height:1.34;color:var(--text);max-width:940px;margin-top:24px;}
+  .small{font-size:15px;line-height:1.42;color:var(--muted);}
+  .mini{font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.36;color:var(--muted);}
+  .green{color:var(--green);}
+  .blue{color:var(--blue);}
+  .amber{color:var(--amber);}
+  .red{color:var(--red);}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:28px;}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+  .asym{display:grid;grid-template-columns:1.05fr .95fr;gap:34px;align-items:stretch;}
+  .panel{
+    background:color-mix(in srgb,var(--surface) 94%,transparent);
+    border:1px solid var(--rule);
+    border-radius:8px;
+    padding:24px;
+    box-shadow:var(--shadow);
+  }
+  .panel.tight{padding:18px;}
+  .panel h3{margin-bottom:12px;}
+  .panel p{font-size:18px;}
+  .chips{display:flex;flex-wrap:wrap;gap:9px;margin-top:16px;}
+  .chip{
+    min-height:32px;
+    border:1px solid var(--rule);
+    background:var(--surface-2);
+    border-radius:999px;
+    padding:7px 11px;
+    color:var(--text);
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    white-space:nowrap;
+  }
+  .list{display:flex;flex-direction:column;gap:13px;margin-top:18px;}
+  .item{display:grid;grid-template-columns:20px 1fr;gap:12px;font-size:18px;line-height:1.34;color:var(--muted);}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--green);margin-top:8px;}
+  .dot.blue{background:var(--blue);}
+  .dot.amber{background:var(--amber);}
+  .dot.red{background:var(--red);}
+  .headline-row{display:flex;align-items:center;gap:16px;margin-top:12px;}
+  .stamp{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:86px;
+    height:42px;
+    border:1px solid var(--rule);
+    border-radius:8px;
+    background:var(--surface);
+    font-family:'JetBrains Mono',monospace;
+    font-size:15px;
+    font-weight:700;
+  }
+  .matrix{
+    display:grid;
+    grid-template-columns:130px repeat(2,1fr);
+    grid-template-rows:54px repeat(2,150px);
+    gap:10px;
+    margin-top:28px;
+  }
+  .cell{
+    border:1px solid var(--rule);
+    border-radius:8px;
+    background:var(--surface);
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+  .cell.axis{background:transparent;box-shadow:none;color:var(--muted);font-family:'JetBrains Mono',monospace;font-size:13px;text-transform:uppercase;}
+  .cell h3{font-size:26px;margin-bottom:8px;}
+  .cell p{font-size:16px;line-height:1.34;}
+  .deal-card{
+    min-height:402px;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    border-top:5px solid var(--rule);
+  }
+  .deal-card.redline{border-top-color:var(--red);}
+  .deal-card.amberline{border-top-color:var(--amber);}
+  .deal-card.greenline{border-top-color:var(--green);}
+  .deal-num{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+  .riskbar{height:8px;border-radius:999px;background:var(--rule-soft);overflow:hidden;margin-top:14px;}
+  .riskbar span{display:block;height:100%;border-radius:999px;}
+  .score{display:flex;justify-content:space-between;gap:12px;margin-top:10px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+  .flow{
+    display:grid;
+    grid-template-columns:1fr 54px 1fr 54px 1fr;
+    gap:14px;
+    align-items:center;
+    margin-top:34px;
+  }
+  .arrow{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:54px;
+    color:var(--muted);
+    font-size:30px;
+  }
+  .box{
+    border:1px solid var(--rule);
+    border-radius:8px;
+    background:var(--surface);
+    padding:22px;
+    min-height:152px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+  }
+  .box strong{font-size:24px;line-height:1.12;}
+  .box span{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);margin-top:10px;}
+  .table{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:0;
+    border:1px solid var(--rule);
+    border-radius:8px;
+    overflow:hidden;
+    margin-top:24px;
+    background:var(--surface);
+  }
+  .th,.td{padding:16px 18px;border-bottom:1px solid var(--rule);font-size:17px;line-height:1.3;}
+  .th{font-family:'JetBrains Mono',monospace;font-size:12px;text-transform:uppercase;color:var(--green);background:var(--surface-2);font-weight:700;}
+  .td:nth-last-child(-n+2){border-bottom:0;}
+  .td:nth-child(odd),.th:nth-child(odd){border-right:1px solid var(--rule);}
+  .clause{
+    border-left:5px solid var(--green);
+    background:var(--surface);
+    border-radius:8px;
+    padding:24px;
+    margin-top:28px;
+    box-shadow:var(--shadow);
+  }
+  .clause p{font-size:22px;color:var(--text);max-width:980px;}
+  .footer-note{position:absolute;left:64px;right:64px;bottom:36px;display:flex;justify-content:space-between;gap:18px;align-items:flex-end;}
+  .sources{font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.45;color:var(--muted);max-width:780px;}
+
+  .rise{opacity:1;transform:none;}
+  @keyframes rise{from{transform:translateY(12px);}to{transform:translateY(0);}}
+  .slide.is-active .rise{animation:rise .58s cubic-bezier(.2,.7,.25,1) var(--d,0s) both;}
+
+  .nav{
+    position:fixed;
+    bottom:22px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:20;
+    display:flex;
+    align-items:center;
+    gap:13px;
+    padding:7px 9px;
+    background:color-mix(in srgb,var(--bg) 84%,transparent);
+    border:1px solid var(--rule);
+    border-radius:999px;
+    backdrop-filter:blur(7px);
+  }
+  .nav button{
+    width:38px;
+    height:34px;
+    flex:none;
+    cursor:pointer;
+    background:var(--surface);
+    border:1px solid var(--rule);
+    border-radius:999px;
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    font-size:18px;
+    line-height:1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition:border-color .18s,color .18s;
+  }
+  .nav button:hover{border-color:var(--green);color:var(--green);}
+  .dots{display:flex;gap:8px;}
+  .dots b{width:7px;height:7px;border-radius:50%;background:var(--rule);transition:background .25s,transform .25s;}
+  .dots b.on{background:var(--green);transform:scale(1.18);}
+  .count{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0;color:var(--muted);}
+  .theme-btn{font-size:15px;}
+
+  @media print{
+    @page{size:landscape;margin:0;}
+    body{overflow:visible;}
+    .nav{display:none;}
+    .deck{display:block;width:auto;height:auto;transform:none!important;}
+    .slide{width:100%;height:auto;display:block;page-break-after:always;}
+    .frame{transform:none!important;page-break-inside:avoid;}
+    .rise{opacity:1!important;transform:none!important;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .deck{transition:none;}
+    .slide.is-active .rise{animation:none;}
+    .rise{opacity:1;transform:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="deck" id="deck">
+
+  <div class="slide is-active">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.04s">Sigma Labs x Bluprynt</div>
+          <div class="tags rise" style="--d:.08s">
+            <span class="tag">Deal structure memo</span>
+            <span class="tag internal">Internal &middot; Sigma only</span>
+          </div>
+        </div>
+        <div class="center">
+          <h1 class="rise" style="--d:.14s">Protect the risk stack. <span class="green">Monetize their lane.</span></h1>
+          <p class="lede rise" style="--d:.28s">The preferred structure is a paid, narrow, time-limited exclusive license in Bluprynt's issuer and regulator market. Sigma keeps its core technology and its curator market.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.04s">Why protect it</div>
+          <div class="tags rise" style="--d:.08s">
+            <span class="tag">Prize and walk-away</span>
+            <span class="tag internal">Internal &middot; Sigma only</span>
+          </div>
+        </div>
+        <h2 class="rise" style="--d:.14s">The partnership is upside, not survival &mdash; so price it that way.</h2>
+        <div class="grid-2" style="margin-top:30px;">
+          <div class="panel rise" style="--d:.24s">
+            <h3 class="green">What a deal unlocks</h3>
+            <div class="list">
+              <div class="item"><span class="dot"></span><span>A regulated buyer set Sigma cannot reach alone: issuers, regulators (BMA, FCA), exchanges, standards bodies.</span></div>
+              <div class="item"><span class="dot"></span><span>Off-chain disclosure that completes the graph exactly where YTD goes dark.</span></div>
+              <div class="item"><span class="dot"></span><span>A reference customer already paying Bluprynt and asking for this: Plume Nest.</span></div>
+              <div class="item"><span class="dot"></span><span>Compliance reporting is a buyer that pays today, not a someday market.</span></div>
+            </div>
+          </div>
+          <div class="panel rise" style="--d:.32s">
+            <h3 class="blue">If there is no deal &mdash; our BATNA</h3>
+            <div class="list">
+              <div class="item"><span class="dot blue"></span><span>Open-source the core; sell fast data and monitoring to curators (m2). Already a business.</span></div>
+              <div class="item"><span class="dot blue"></span><span>All of t2 and m2 stay unencumbered.</span></div>
+              <div class="item"><span class="dot blue"></span><span>m1 exclusivity is something we grant, not something we need.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="clause rise" style="--d:.46s">
+          <p>So we negotiate from strength. Exclusivity in Bluprynt's lane is lost option value they should pay for &mdash; not a lifeline we are seeking.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.04s">Definitions</div>
+          <div class="tags rise" style="--d:.08s">
+            <span class="tag">Tech x market</span>
+            <span class="tag internal">Internal &middot; Sigma only</span>
+          </div>
+        </div>
+        <h2 class="rise" style="--d:.14s">The whole negotiation is about separating technology ownership from market access.</h2>
+        <div class="matrix rise" style="--d:.26s">
+          <div class="cell axis"></div>
+          <div class="cell axis">m1: Bluprynt market</div>
+          <div class="cell axis">m2: Sigma market</div>
+          <div class="cell axis">t1<br />Bluprynt tech</div>
+          <div class="cell">
+            <h3 class="blue">Compliance stack</h3>
+            <p>Know Your Issuer (KYI), Proof of Collateral, issuer workflows, regulator interface, asset graph, monitoring.</p>
+          </div>
+          <div class="cell">
+            <h3>Not Sigma's channel</h3>
+            <p>Useful as context, but not the buyer set Sigma can naturally reach.</p>
+          </div>
+          <div class="cell axis">t2<br />Sigma tech</div>
+          <div class="cell">
+            <h3 class="green">Licensed output</h3>
+            <p>Loss, depeg, yield, dependency, and liquidity model outputs inside Bluprynt products.</p>
+          </div>
+          <div class="cell">
+            <h3 class="green">Owned product</h3>
+            <p>YTD, DIG, protocol adapters, data machinery, curator workflows, vault risk tooling.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.04s">Three structures</div>
+          <div class="tags rise" style="--d:.08s">
+            <span class="tag">The choice set</span>
+            <span class="tag internal">Internal &middot; Sigma only</span>
+          </div>
+        </div>
+        <h2 class="rise" style="--d:.14s">Each option trades control, upside, and survival risk differently.</h2>
+        <div class="grid-3" style="margin-top:30px;">
+          <div class="panel deal-card redline rise" style="--d:.24s">
+            <div>
+              <div class="deal-num">Option 1</div>
+              <h3>BP owns t1 + t2</h3>
+              <p>Clean for Bluprynt, but functionally an acquisition of Sigma's risk stack.</p>
+            </div>
+            <div>
+              <div class="riskbar"><span style="width:22%;background:var(--red);"></span></div>
+              <div class="score"><span>Fit for Sigma</span><span>low</span></div>
+            </div>
+          </div>
+          <div class="panel deal-card amberline rise" style="--d:.32s">
+            <div>
+              <div class="deal-num">Option 2</div>
+              <h3>Sigma supplies t2 generally</h3>
+              <p>Maximum optionality, but selling into m1 may be mostly theoretical.</p>
+            </div>
+            <div>
+              <div class="riskbar"><span style="width:55%;background:var(--amber);"></span></div>
+              <div class="score"><span>Fit for Sigma</span><span>partial</span></div>
+            </div>
+          </div>
+          <div class="panel deal-card greenline rise" style="--d:.40s">
+            <div>
+              <div class="deal-num">Option 3</div>
+              <h3>Sigma owns t2, BP licenses m1</h3>
+              <p>Best balance if exclusivity is narrow, paid, timed, and milestone-based.</p>
+            </div>
+            <div>
+              <div class="riskbar"><span style="width:85%;background:var(--green);"></span></div>
+              <div class="score"><span>Fit for Sigma</span><span class="green">high &check;</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.04s">Option 1</div>
+          <div class="tags rise" style="--d:.08s">
+            <span class="tag">Full ownership by Bluprynt</span>
+            <span class="tag internal">Internal &middot; Sigma only</span>
+          </div>
+        </div>
+        <div class="asym">
+          <div class="center">
+            <h2 class="rise" style="--d:.14s">Treat this as an acquisition, not a partnership.</h2>
+            <p class="lede rise" style="--d:.26s">If Bluprynt owns t1 + t2, Sigma is handing over its core asset for startup-partnership economics.</p>
+          </div>
+          <div class="panel rise" style="--d:.34s">
+            <h3 class="red">Why this is dangerous</h3>
+            <div class="list">
+              <div class="item"><span class="dot red"></span><span>BP may fail within the exclusivity period, taking the best use of t2 with it.</span></div>
+              <div class="item"><span class="dot red"></span><span>They have modest seed funding relative to US salaries and enterprise sales cycles.</span></div>
+              <div class="item"><span class="dot red"></span><span>Ownership could block Sigma from selling to curators, its natural customer base.</span></div>
+              <div class="item"><span class="dot red"></span><span>Any future acquirer of BP could inherit control over Sigma's core methodology.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="clause rise" style="--d:.46s">
+          <p>Only accept this path for acquisition-level consideration, strong cash at close, and explicit freedom for Sigma founders to keep working in m2.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.04s">Option 2</div>
+          <div class="tags rise" style="--d:.08s">
+            <span class="tag">No special footing</span>
+            <span class="tag internal">Internal &middot; Sigma only</span>
+          </div>
+        </div>
+        <h2 class="rise" style="--d:.14s">This preserves optionality, but m1 optionality may be hard to realize alone.</h2>
+        <div class="grid-2" style="margin-top:30px;">
+          <div class="panel rise" style="--d:.24s">
+            <h3 class="green">What works</h3>
+            <div class="list">
+              <div class="item"><span class="dot"></span><span>Sigma keeps t2 completely unencumbered.</span></div>
+              <div class="item"><span class="dot"></span><span>Sigma can sell to BP competitors or future RWA platforms.</span></div>
+              <div class="item"><span class="dot"></span><span>No market carve-out, no dependency on BP execution.</span></div>
+            </div>
+          </div>
+          <div class="panel rise" style="--d:.32s">
+            <h3 class="amber">What is weak</h3>
+            <div class="list">
+              <div class="item"><span class="dot amber"></span><span>Regulators and issuers buy trust, legal workflow, compliance surface, and institutional references.</span></div>
+              <div class="item"><span class="dot amber"></span><span>Sigma's direct network is m2, not m1.</span></div>
+              <div class="item"><span class="dot amber"></span><span>Competitors may exist but may not feel urgent need for t2 until the market matures.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="chips rise" style="--d:.44s">
+          <span class="chip">Securitize</span>
+          <span class="chip">Tokeny / ERC-3643</span>
+          <span class="chip">Chainlink ACE</span>
+          <span class="chip">Fireblocks</span>
+          <span class="chip">Taurus</span>
+          <span class="chip">Ondo / Superstate</span>
+          <span class="chip">Centrifuge</span>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.04s">Option 3</div>
+          <div class="tags rise" style="--d:.08s">
+            <span class="tag">Recommended target</span>
+            <span class="tag internal">Internal &middot; Sigma only</span>
+          </div>
+        </div>
+        <h2 class="rise" style="--d:.14s">Give Bluprynt a protected lane where they create distribution, not ownership of the engine.</h2>
+        <div class="flow rise" style="--d:.26s">
+          <div class="box">
+            <strong>Sigma owns t2</strong>
+            <span>YTD, DIG, models, adapters, data machinery</span>
+          </div>
+          <div class="arrow">&rarr;</div>
+          <div class="box">
+            <strong>BP licenses m1</strong>
+            <span>issuer, regulator, RWA compliance, insurance readiness</span>
+          </div>
+          <div class="arrow">&rarr;</div>
+          <div class="box">
+            <strong>Sigma keeps m2</strong>
+            <span>curators, vaults, protocols, allocators, risk desks</span>
+          </div>
+        </div>
+        <div class="grid-4" style="margin-top:26px;">
+          <div class="panel tight rise" style="--d:.36s"><h3 class="green">Narrow</h3><p>Only m1, not all RWA or all risk modelling.</p></div>
+          <div class="panel tight rise" style="--d:.42s"><h3 class="blue">Timed</h3><p>Start at 12 months; renew only if milestones are met.</p></div>
+          <div class="panel tight rise" style="--d:.48s"><h3 class="amber">Paid</h3><p>Minimum floor compensates lost option value.</p></div>
+          <div class="panel tight rise" style="--d:.54s"><h3>Measured</h3><p>Continuation depends on launches and revenue.</p></div>
+        </div>
+        <p class="small rise" style="--d:.6s;margin-top:18px;">Everything up to here is internal framing. The slides that follow are written to be shown to Bluprynt.</p>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.04s">The product</div>
+          <div class="tags rise" style="--d:.08s">
+            <span class="tag">Why the join matters</span>
+            <span class="tag shared">Shareable with Bluprynt</span>
+          </div>
+        </div>
+        <h2 class="rise" style="--d:.14s">Neither graph explains RWA risk alone. The product is the join.</h2>
+        <div class="flow4 rise" style="--d:.26s">
+          <div class="gnode">
+            <span class="own green">Sigma &middot; t2</span>
+            <strong>Token / vault share</strong>
+            <span class="det">what the holder actually buys</span>
+          </div>
+          <div class="arrow">&rarr;</div>
+          <div class="gnode">
+            <span class="own green">Sigma &middot; t2</span>
+            <strong>On-chain dependency tree</strong>
+            <span class="det">vaults &middot; lending &middot; collateral &middot; loops &middot; queues &mdash; YTD / DIG</span>
+          </div>
+          <div class="arrow">&rarr;</div>
+          <div class="gnode join">
+            <span class="own amber">Join key</span>
+            <strong>Off-chain boundary node</strong>
+            <span class="det">where on-chain analysis stops</span>
+          </div>
+          <div class="arrow">&rarr;</div>
+          <div class="gnode">
+            <span class="own blue">Bluprynt &middot; t1</span>
+            <strong>Attested off-chain claim</strong>
+            <span class="det">issuer &middot; legal wrapper &middot; custody &middot; redemption &middot; Proof of Collateral</span>
+          </div>
+        </div>
+        <div class="clause rise" style="--d:.42s">
+          <p>Sigma owns the edges into the boundary node; Bluprynt attaches the attested facts beyond it. That boundary node is the schema join &mdash; and the cleanest line for who owns what.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.04s">Field boundary</div>
+          <div class="tags rise" style="--d:.08s">
+            <span class="tag">Define the lane</span>
+            <span class="tag shared">Shareable with Bluprynt</span>
+          </div>
+        </div>
+        <h2 class="rise" style="--d:.14s">The contract should define what BP gets and what is expressly carved out.</h2>
+        <div class="table rise" style="--d:.26s">
+          <div class="th">Bluprynt protected m1 lane</div>
+          <div class="th">Sigma retained m2 lane</div>
+          <div class="td">Regulator-facing tokenized asset reporting</div>
+          <div class="td">DeFi curators and vault managers</div>
+          <div class="td">Issuer-facing RWA and stablecoin compliance</div>
+          <div class="td">Morpho, Euler, Aave, Lido, and protocol risk desks</div>
+          <div class="td">Proof of Collateral and insurance-readiness products</div>
+          <div class="td">Standalone YTD, DIG, depeg, and yield-risk products</div>
+          <div class="td">Bank, exchange, and regulator reporting workflows</div>
+          <div class="td">Crypto allocators, asset managers, and Sigma-originated accounts</div>
+        </div>
+        <div class="clause rise" style="--d:.42s">
+          <p>Default geography follows Bluprynt's regulatory footprint &mdash; Bermuda (BMA), UK (FCA), and US. Add EU, UAE, or APAC only for separate commercial consideration.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.04s">Ownership split</div>
+          <div class="tags rise" style="--d:.08s">
+            <span class="tag">Contract architecture</span>
+            <span class="tag shared">Shareable with Bluprynt</span>
+          </div>
+        </div>
+        <h2 class="rise" style="--d:.14s">Accept "BP runs the full stack"; narrow "BP owns the full stack."</h2>
+        <div class="grid-2" style="margin-top:30px;">
+          <div class="panel rise" style="--d:.24s">
+            <h3 class="blue">Bluprynt can own</h3>
+            <div class="list">
+              <div class="item"><span class="dot blue"></span><span>Customer contracts, billing, support, and regulator interface.</span></div>
+              <div class="item"><span class="dot blue"></span><span>PoC Asset Graph, Know Your Issuer (KYI), issuer docs, credential registry, off-chain disclosure workflow.</span></div>
+              <div class="item"><span class="dot blue"></span><span>Bluprynt-specific UI, integrations, reports, monitoring, and operational SLAs.</span></div>
+            </div>
+          </div>
+          <div class="panel rise" style="--d:.32s">
+            <h3 class="green">Sigma must own</h3>
+            <div class="list">
+              <div class="item"><span class="dot"></span><span>YTD and DIG methodology, code, data pipelines, and general tooling.</span></div>
+              <div class="item"><span class="dot"></span><span>Loss, depeg, liquidity, yield, and dependency models.</span></div>
+              <div class="item"><span class="dot"></span><span>Protocol and yield adapters, reusable improvements, research notebooks, model calibration.</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="clause rise" style="--d:.44s">
+          <p>Bluprynt gets a commercial license to outputs inside covered products. They do not get the machinery.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.04s">Economics</div>
+          <div class="tags rise" style="--d:.08s">
+            <span class="tag">Make exclusivity earned</span>
+            <span class="tag shared">Shareable with Bluprynt</span>
+          </div>
+        </div>
+        <h2 class="rise" style="--d:.14s">If BP wants Sigma not to sell t2 into m1, they pay for the lost option value.</h2>
+        <div class="grid-3" style="margin-top:30px;">
+          <div class="panel rise" style="--d:.24s">
+            <h3 class="green">Paid pilot</h3>
+            <p>60-90 days around Plume/Nest or PYUSD/syrupUSDC. Non-exclusive until the license option is exercised.</p>
+          </div>
+          <div class="panel rise" style="--d:.32s">
+            <h3 class="blue">Annual floor</h3>
+            <p>Minimum research and license fee. Exclusivity exists only while the floor is paid.</p>
+          </div>
+          <div class="panel rise" style="--d:.40s">
+            <h3 class="amber">Revenue share</h3>
+            <p>Royalty on insurance-tier or premium revenue enabled by Sigma models. Sigma keeps a majority channel share &mdash; target 70% &mdash; on Sigma-originated accounts.</p>
+          </div>
+        </div>
+        <div class="clause rise" style="--d:.52s">
+          <p>Missed payment, no launch, insolvency, or no covered customer conversion should automatically end exclusivity.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.04s">Term sheet</div>
+          <div class="tags rise" style="--d:.08s">
+            <span class="tag">One-page summary</span>
+            <span class="tag shared">Shareable with Bluprynt</span>
+          </div>
+        </div>
+        <h2 class="rise" style="--d:.14s">The proposal on one page. Amounts marked <span class="amber">anchor</span> open after the pilot.</h2>
+        <div class="sheet rise" style="--d:.24s">
+          <div class="k">License scope</div><div class="v">Model outputs only, inside covered products &mdash; never source or machinery.</div>
+          <div class="k">Exclusive field</div><div class="v">m1: issuer + regulator RWA compliance, Proof of Collateral, insurance-readiness.</div>
+          <div class="k">Geography</div><div class="v">Bluprynt footprint: Bermuda (BMA), UK (FCA), US. <span class="pill-anchor">anchor</span> EU / UAE / APAC priced separately.</div>
+          <div class="k">Term</div><div class="v">12 months, renews only on met milestones. <span class="pill-anchor">anchor</span></div>
+          <div class="k">Pilot</div><div class="v">60&ndash;90 days on Plume Nest, non-exclusive until the option is exercised. <span class="pill-anchor">anchor</span></div>
+          <div class="k">Annual floor</div><div class="v">Minimum research + license fee; exclusivity lapses if unpaid. <span class="pill-anchor">TBD after pilot</span></div>
+          <div class="k">Royalty + channel</div><div class="v">Share of insurance-tier / premium revenue from Sigma models; Sigma keeps majority (target 70%) on Sigma-originated accounts. <span class="pill-anchor">TBD after pilot</span></div>
+          <div class="k">Carve-out</div><div class="v">m2 (curators, protocols) fully retained and survives termination.</div>
+          <div class="k">Change of control</div><div class="v">No assignment without Sigma consent; source / model escrow released on insolvency.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.04s">Clause checklist</div>
+          <div class="tags rise" style="--d:.08s">
+            <span class="tag">Non-negotiables</span>
+            <span class="tag shared">Shareable with Bluprynt</span>
+          </div>
+        </div>
+        <h2 class="rise" style="--d:.14s">The paper should prevent silent transfer of Sigma's core asset.</h2>
+        <div class="grid-2" style="margin-top:30px;">
+          <div class="panel rise" style="--d:.24s">
+            <h3>IP and license</h3>
+            <div class="list">
+              <div class="item"><span class="dot"></span><span>No assignment of t2, no work-made-for-hire treatment of Sigma methods.</span></div>
+              <div class="item"><span class="dot"></span><span>Background IP and generalized improvements stay with Sigma.</span></div>
+              <div class="item"><span class="dot"></span><span>License covers outputs and agreed deliverables, not source machinery.</span></div>
+            </div>
+          </div>
+          <div class="panel rise" style="--d:.32s">
+            <h3>Commercial control</h3>
+            <div class="list">
+              <div class="item"><span class="dot blue"></span><span>m2 carve-out is explicit and survives termination.</span></div>
+              <div class="item"><span class="dot blue"></span><span>No assignment on BP acquisition or change of control without consent.</span></div>
+              <div class="item"><span class="dot blue"></span><span>Post-termination rights limited to historical reports, not live model use.</span></div>
+              <div class="item"><span class="dot blue"></span><span>Source / model escrow with Sigma audit rights, released only on insolvency or breach.</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="slide">
+    <section class="frame">
+      <div class="content">
+        <div class="topline">
+          <div class="kicker rise" style="--d:.04s">Negotiating line</div>
+          <div class="tags rise" style="--d:.08s">
+            <span class="tag">Use this wording</span>
+            <span class="tag shared">Shareable with Bluprynt</span>
+          </div>
+        </div>
+        <div class="center">
+          <h2 class="rise" style="--d:.14s">We are open to giving Bluprynt a protected lane in your issuer and regulator market.</h2>
+          <div class="clause rise" style="--d:.28s">
+            <p>We are not transferring ownership of our underlying risk stack. Exclusivity should be field-specific, time-limited, paid, and conditioned on commercial progress. Our curator and protocol market remains fully carved out.</p>
+          </div>
+          <div class="chips rise" style="--d:.42s">
+            <span class="chip">Sigma owns t2</span>
+            <span class="chip">BP licenses m1</span>
+            <span class="chip">m2 carved out</span>
+            <span class="chip">Milestones required</span>
+            <span class="chip">No change-of-control transfer</span>
+          </div>
+        </div>
+        <div class="footer-note rise" style="--d:.54s">
+          <div class="sources">Reference: Bluprynt + Sigma call (2026-06-22) and follow-up. Pilot candidate: Plume Nest (active Bluprynt customer). Other platform names are illustrative market context, not competitors of the pilot.</div>
+          <div class="mini">2026-06-23</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+</div>
+
+<nav class="nav" aria-label="Slide navigation">
+  <button id="prev" aria-label="Previous slide">&lsaquo;</button>
+  <span class="dots" id="dots" aria-hidden="true"></span>
+  <span class="count" id="count">01 / 01</span>
+  <button id="next" aria-label="Next slide">&rsaquo;</button>
+  <button id="theme" class="theme-btn" aria-label="Toggle light/dark">&#9728;</button>
+</nav>
+
+<script>
+  (function () {
+    var W = 1280, H = 800;
+    var deck   = document.getElementById('deck');
+    var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+    var prev   = document.getElementById('prev');
+    var next   = document.getElementById('next');
+    var count  = document.getElementById('count');
+    var dotsEl = document.getElementById('dots');
+    var themeB = document.getElementById('theme');
+    var N = slides.length, idx = 0;
+
+    var dots = slides.map(function () {
+      var b = document.createElement('b');
+      dotsEl.appendChild(b);
+      return b;
+    });
+
+    function fit() {
+      var s = Math.min(window.innerWidth / W, window.innerHeight / H);
+      document.documentElement.style.setProperty('--s', s);
+    }
+    fit();
+    window.addEventListener('resize', fit);
+
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+    function show(i) {
+      idx = (i % N + N) % N;
+      deck.style.transform = 'translateX(' + (-idx * 100) + 'vw)';
+      slides.forEach(function (s, j) { s.classList.toggle('is-active', j === idx); });
+      dots.forEach(function (d, j) { d.classList.toggle('on', j === idx); });
+      count.textContent = pad(idx + 1) + ' / ' + pad(N);
+      var hash = '#' + (idx + 1);
+      if (location.hash !== hash) history.replaceState(null, '', hash);
+    }
+
+    prev.addEventListener('click', function () { show(idx - 1); });
+    next.addEventListener('click', function () { show(idx + 1); });
+
+    window.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowRight' || e.key === ' ') show(idx + 1);
+      if (e.key === 'ArrowLeft') show(idx - 1);
+      if (e.key === 'Home') show(0);
+      if (e.key === 'End') show(N - 1);
+      if (e.key.toLowerCase() === 'f' && document.fullscreenElement == null) {
+        document.documentElement.requestFullscreen().catch(function () {});
+      }
+    });
+
+    var sx = null;
+    window.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; }, {passive:true});
+    window.addEventListener('touchend', function (e) {
+      if (sx == null) return;
+      var dx = e.changedTouches[0].clientX - sx;
+      if (Math.abs(dx) > 45) show(idx + (dx < 0 ? 1 : -1));
+      sx = null;
+    }, {passive:true});
+
+    themeB.addEventListener('click', function () {
+      var root = document.documentElement;
+      var nextTheme = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', nextTheme);
+      localStorage.setItem('slideTheme', nextTheme);
+    });
+
+    var fromHash = parseInt(location.hash.replace('#',''), 10);
+    show(Number.isFinite(fromHash) ? fromHash - 1 : 0);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { document.body.classList.add('ready'); });
+    });
+  })();
+</script>
+</body>
+</html>
