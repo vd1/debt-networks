@@ -50,7 +50,6 @@ The model's appeal is real. But its rapid expansion has exposed a structural gap
 This gap is not a matter of opinion. Independent research published in April 2026 by Luca Prosperi ([*Physics of On-Chain Lending*](https://dirtroads.substack.com/p/68-the-physics-of-on-chain-lending)) documented 20–100x mispricing of collateral risk across major DeFi lending markets. Risk analytics firm Chaos Labs, in its post-mortem of the Resolv/USR exploit, documented the same structural failure: hardcoded oracles, unchecked minting roles, and leverage loops that were all readable from public blockchain state before any damage occurred. The problem is architectural, not incidental, and it recurs because no shared framework exists to read the onchain signals systematically.
 
 
-
 ### A Growing Pattern of Confidence Failures
 
 Three episodes made curator collateral risk impossible to ignore:
