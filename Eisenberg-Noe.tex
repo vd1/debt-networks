@@ -1,0 +1,600 @@
+\documentclass[11pt,oneside]{article}
+\frenchspacing
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{enumitem}
+\usepackage{geometry}
+\usepackage{hyperref}
+
+\geometry{margin=1in}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue,
+}
+
+\newtheorem{definition}{Definition}
+\newtheorem{proposition}{Proposition}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\barp}{\bar p}
+\newcommand{\estate}{e}
+
+\title{Eisenberg--Noe Clearing as a Smart Contract Primitive}
+\author{Research note}
+\date{June 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+The research idea is to implement a self-clearing credit network on-chain.
+Borrowers and lenders, or pools thereof in lending architectures such as
+Morpho, Aave, and related venues, do not resolve distress through isolated
+liquidations or first-come-first-served withdrawals. They opt into a common
+liability graph.
+When the network enters settlement, a smart contract applies an
+Eisenberg--Noe style global bankruptcy rule: each debtor pays what it can, each
+creditor receives pro rata within its claim class, and circular obligations are
+cleared by a fixed point. The purpose of the contract is not to make default
+disappear. It is to replace local liquidation races with a verifiable global
+clearing vector.
+\end{abstract}
+
+\section{Motivation}
+
+Most DeFi credit protocols are pairwise. A position becomes unsafe, a liquidator
+buys collateral, and the local loan is closed. This is clean for a single
+overcollateralized loan, but it is less natural for a network of vaults,
+borrowers, lenders, rehypothecated claims, recursive lending loops, or tokenized
+credit lines.
+
+In such a network, a participant's solvency may depend on payments from other
+participants who themselves depend on payments from the first participant or
+from a shared set of intermediaries. Local liquidation can then destroy value
+or amplify a stress that a global settlement would have absorbed.
+
+The Eisenberg--Noe model gives a compact rule for this setting
+\cite{eisenberg2001systemic}. It treats the financial system as a directed
+graph of nominal obligations and computes the clearing payments that are
+mutually consistent with limited liability and pro rata repayment. The
+smart-contract question is:
+
+\begin{quote}
+Can we build an on-chain clearinghouse where the liability graph is native
+state, the clearing vector is proposed by solvers, and the contract verifies
+and executes the fixed point?
+\end{quote}
+
+\section{The Clearing Model}
+
+Let $N=\{1,\ldots,n\}$ be a set of participants. Participant $i$ has external
+assets $x_i \geq 0$ and nominal liabilities $\barp_i \geq 0$. The matrix
+$\Pi \in \R_+^{n \times n}$ records relative liabilities: $\Pi_{ij}$ is the
+fraction of $i$'s total liabilities owed to $j$. If $\barp_i>0$ then
+\[
+  \sum_j \Pi_{ij}=1.
+\]
+If $\barp_i=0$, set $\Pi_{ij}=0$ for all $j$.
+
+A clearing payment vector $p \in \R_+^n$ satisfies
+\[
+  0 \leq p_i \leq \barp_i
+\]
+and
+\[
+  p_i =
+  \min\left\{
+    \barp_i,\,
+    x_i + \sum_j \Pi_{ji}p_j
+  \right\}.
+\]
+The term
+\[
+  \estate_i(p) = x_i + \sum_j \Pi_{ji}p_j
+\]
+is the estate available to participant $i$ after incoming payments. If
+$\estate_i(p) \geq \barp_i$, participant $i$ pays all liabilities. If
+$\estate_i(p)<\barp_i$, participant $i$ defaults and pays exactly its estate
+pro rata to creditors.
+
+Equivalently, define the monotone map
+\[
+  \Phi_i(p)=
+  \min\left\{
+    \barp_i,\,
+    x_i + \sum_j \Pi_{ji}p_j
+  \right\}.
+\]
+A clearing vector is a fixed point $p=\Phi(p)$. Under standard regularity
+conditions the relevant clearing vector is unique. Recent work sharpens the
+equilibrium uniqueness question for the original model
+\cite{stachurski2022properties}. Even when uniqueness needs care, the greatest
+clearing vector has a clear economic meaning: it is the most optimistic payment
+vector compatible with limited liability and the liability graph.
+
+\section{Contract Interpretation}
+
+The on-chain primitive is a settlement contract for a single numeraire asset at
+first. Participants deposit assets, issue obligations to each other, and agree
+that a settlement epoch will be resolved by the clearing rule.
+
+\subsection{State}
+
+The minimal state is:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item a participant registry;
+  \item a set of directed liability edges $(i,j,L_{ij})$;
+  \item deposited external assets $x_i$ for each participant;
+  \item a settlement status: live, frozen, proposed, challenged, or executed;
+  \item the proposed clearing vector $p$ for the current epoch.
+\end{itemize}
+
+From the raw liability matrix $L$, the contract derives
+\[
+  \barp_i=\sum_j L_{ij}
+  \quad\text{and}\quad
+  \Pi_{ij} =
+  \begin{cases}
+    L_{ij}/\barp_i, & \barp_i>0,\\
+    0, & \barp_i=0.
+  \end{cases}
+\]
+
+\subsection{Lifecycle}
+
+A simple lifecycle is:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item Live mode. Participants create, transfer, repay, or cancel obligations
+  subject to protocol rules.
+  \item Freeze. An epoch ends or a distress trigger freezes the graph.
+  \item Proposal. A solver submits a clearing vector $p$ and posts a bond.
+  \item Verification. The contract checks that $p$ satisfies the clearing
+  equations within exact integer arithmetic or a stated tolerance.
+  \item Challenge. Other participants can challenge an invalid vector during a
+  short window.
+  \item Execution. The contract distributes assets according to $p$ and marks
+  unpaid liabilities as defaulted, rolled, tokenized, or extinguished according
+  to the product design.
+\end{enumerate}
+
+\section{Why Verification Is Easier Than Solving}
+
+The contract does not need to run an iterative fixed-point algorithm for large
+graphs. A solver can compute $p$ off-chain. The contract only needs to verify
+that the proposed vector is a fixed point.
+
+For each participant $i$, compute
+\[
+  \estate_i = x_i + \sum_j L_{ji}\frac{p_j}{\barp_j},
+\]
+where the fraction is defined as zero if $\barp_j=0$. Then check:
+\[
+  0 \leq p_i \leq \barp_i.
+\]
+If $p_i < \barp_i$, require
+\[
+  p_i = \estate_i.
+\]
+If $p_i=\barp_i$, require
+\[
+  \estate_i \geq \barp_i.
+\]
+These local checks prove the global fixed-point condition. They cost
+$O(n+|E|)$ for a graph with $n$ participants and $|E|$ liability edges.
+
+\subsection{Certifying the greatest fixed point}
+
+The canonical Eisenberg--Noe clearing vector is the greatest fixed point of
+\[
+  \Phi(p)=\barp \wedge (x+\Pi^\top p).
+\]
+Economically, it is the maximal payment vector compatible with limited
+liability, priority, and the liability graph. If the clearing vector is unique,
+then any verified fixed point is already canonical. If uniqueness is not built
+into the admissible graph, verifying
+\[
+  p=\Phi(p)
+\]
+only proves that $p$ is a fixed point. It does not by itself prove that $p$ is
+the greatest one.
+
+The direct certificate is the top-iteration trace:
+\[
+  p^0=\barp,\qquad p^{t+1}=\Phi(p^t).
+\]
+Since $\Phi$ is monotone and $\Phi(\barp)\leq \barp$, the sequence decreases.
+In exact integer arithmetic with a deterministic rounding rule, the trace
+terminates when
+\[
+  p^{T+1}=p^T.
+\]
+The terminal vector is the greatest fixed point. A solver can therefore submit
+the whole trace
+\[
+  p^0,p^1,\ldots,p^T
+\]
+and the contract verifies every transition. This is stronger than a local
+fixed-point check, but it costs $O(T|E|)$ rather than $O(|E|)$.
+
+There are several lighter variants:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item enforce uniqueness conditions on admissible graphs, so a local
+  fixed-point check is sufficient;
+  \item use an optimistic challenge rule where any participant can disprove a
+  proposal by submitting a strictly higher valid fixed point;
+  \item require a proof that the submitted vector is the result of the
+  top-iteration procedure, possibly with a succinct proof system;
+  \item restrict the first implementation to graph classes where multiplicity is
+  not the core risk.
+\end{itemize}
+
+This maximality issue may become less central in a soft-clearing design. If the
+system moves through warning, compression, and partial deleveraging before hard
+settlement, the protocol may care more about conservative executable recovery
+values and monotone risk triggers than about proving a terminal bankruptcy
+allocation in one step. Still, for a hard clearing epoch, the contract should
+either verify the greatest fixed point or make explicit why any fixed point is
+canonical.
+
+\subsection{Integer Form}
+
+In Solidity, the contract should avoid rational numbers. It can store raw
+liabilities $L_{ij}$ and payments $p_i$ in integer token units. To check
+participant $i$, multiply through by common denominators or use conservative
+rounding rules.
+
+For each incoming edge $j \to i$, the payment sent from $j$ to $i$ is
+\[
+  q_{ji} = \left\lfloor \frac{L_{ji}p_j}{\barp_j} \right\rfloor.
+\]
+The rounding remainder can be assigned to a deterministic residue account, sent
+to creditors by edge order, or retained as dust. The important design point is
+that the rounding rule must be part of the clearing equation, not an
+implementation afterthought.
+
+\section{Smart Contract Sketch}
+
+The verifier has this shape:
+
+\begin{verbatim}
+for each participant i:
+    require(p[i] <= totalLiabilities[i])
+    estate = externalAssets[i]
+
+for each liability edge j -> i with amount L[j][i]:
+    if totalLiabilities[j] > 0:
+        estate[i] += floor(L[j][i] * p[j] / totalLiabilities[j])
+
+for each participant i:
+    if p[i] < totalLiabilities[i]:
+        require(p[i] == estate[i])
+    else:
+        require(estate[i] >= totalLiabilities[i])
+\end{verbatim}
+
+Execution then pushes edge payments:
+
+\begin{verbatim}
+for each liability edge i -> j with amount L[i][j]:
+    if totalLiabilities[i] > 0:
+        q = floor(L[i][j] * p[i] / totalLiabilities[i])
+        transfer(asset, j, q)
+\end{verbatim}
+
+This is the core self-solving mechanism. Solvers compete to submit the correct
+clearing vector. The contract enforces the bankruptcy rule. Participants no
+longer need to race each other through local closeouts once the network is
+frozen.
+
+\section{What This Buys}
+
+\subsection{Netting circular claims}
+
+Circular obligations are not exceptional in the model. If $A$ owes $B$, $B$
+owes $C$, and $C$ owes $A$, the fixed point clears the cycle jointly. The result
+can preserve value that pairwise liquidation would waste.
+
+\subsection{Contagion as state}
+
+The default set is endogenous:
+\[
+  D(p)=\{i: p_i<\barp_i\}.
+\]
+Losses, contagion paths, and recovery rates become explicit outputs of the
+settlement contract. This is useful for monitoring, insurance, tranche design,
+and risk capital.
+
+\subsection{Bankruptcy before liquidation}
+
+The contract separates the insolvency rule from the asset liquidation rule.
+In a collateralized DeFi market, collateral can be sold first and residual
+unsecured claims can then enter the clearing graph. Or collateral can remain in
+the estate and be distributed by the global clearing vector. These are different
+products, but the same fixed-point logic can sit beneath both.
+
+\section{DeFi Extensions}
+
+The plain Eisenberg--Noe model assumes a single numeraire, fixed nominal
+liabilities, and pro rata claims of equal seniority. DeFi needs extensions.
+Close relatives in the financial-network literature add default costs, rescue
+rules, liquidity effects, and network-stability analysis
+\cite{rogers2013failure,cifuentes2005liquidity,acemoglu2015systemic,glasserman2016contagion}.
+
+\subsection{Collateral}
+
+Collateral can be handled by a waterfall:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item seize or mark collateral;
+  \item repay secured creditors up to the collateral value;
+  \item place any residual deficiency into the unsecured clearing graph;
+  \item clear unsecured liabilities by the Eisenberg--Noe rule.
+\end{enumerate}
+
+An alternative is to treat collateral as part of $x_i$ and allow the global
+clearing to distribute the estate. That is simpler but may conflict with
+secured-creditor expectations.
+
+\subsection{Seniority}
+
+Multiple seniority classes can be implemented by sequential clearing. Senior
+claims are cleared first. Remaining estate then enters the next class. This
+preserves priority without abandoning the network view.
+
+\subsection{Multiple assets}
+
+A multi-asset version requires prices or exchange mechanisms. The cleanest MVP
+uses a single ERC20 numeraire. A later version can introduce:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item oracle prices fixed at the freeze block;
+  \item on-chain auctions for non-numeraire collateral;
+  \item separate clearing vectors by asset;
+  \item endogenous price impact if liquidation size affects recovery.
+\end{itemize}
+
+\subsection{Dynamic obligations}
+
+The graph must freeze before settlement. Otherwise participants can create
+claims after observing the proposed clearing vector. A real implementation needs
+epoch boundaries, rate limits, permissioning, or a mempool-resistant freeze
+rule.
+
+\section{Objections as Design Constraints}
+
+The natural objections narrow to two design questions:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item which claims are eligible for the clearing graph;
+  \item how secured and collateralized claims enter the clearing rule.
+\end{itemize}
+
+Some apparent objections are implementation choices rather than blockers.
+Solving the fixed point on-chain is unnecessary: the solver can compute the
+candidate vector off-chain, while the contract verifies the fixed-point
+conditions in $O(n+|E|)$. The remaining subtlety is maximality: if uniqueness
+conditions are not enforced by the admissible graph, the contract should require
+the greatest clearing vector rather than merely any fixed point, using one of
+the certificate or challenge rules above.
+
+Oracle manipulation is also not special to this construction. Any DeFi system
+that admits marked collateral inherits oracle risk. The sharper version is that
+the oracle becomes a bankruptcy allocation input. The first prototype should
+therefore use a single deposited numeraire and no oracle. Marked collateral can
+enter only after the fixed-point verifier and settlement accounting are clean.
+
+\subsection{Why plain pro rata bankruptcy is not enough}
+
+Plain Eisenberg--Noe is pari passu unsecured bankruptcy. Each creditor of a
+defaulting node shares the estate pro rata within a claim class. DeFi lending is
+usually not shaped like that. It has secured claims, liquidation thresholds,
+collateral-specific liens, seniority, liquidation penalties, and sometimes
+price impact.
+
+Consider a debtor $A$ with:
+
+\[
+\begin{array}{rcl}
+  A & \text{owes} & B: 100, \quad \text{secured by collateral worth } 80,\\
+  A & \text{owes} & C: 100, \quad \text{unsecured},\\
+  A & \text{has} & 20 \quad \text{free assets}.
+\end{array}
+\]
+
+Plain pro rata clearing would see estate $100$ and liabilities $200$, so $B$
+receives $50$ and $C$ receives $50$. That ignores the secured nature of $B$'s
+claim.
+
+A secured-credit waterfall gives a different result. First, $B$ receives the
+collateral value $80$. This leaves a residual unsecured deficiency of $20$ for
+$B$. The unsecured graph then has claims $B:20$ and $C:100$ against free estate
+$20$, so $B$ receives $20\cdot 20/120=3.33$ and $C$ receives
+$20\cdot 100/120=16.67$. The final allocation is:
+
+\[
+  B:83.33,\qquad C:16.67.
+\]
+
+This suggests the clean extension:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item resolve secured closeout or collateral waterfalls first;
+  \item convert collateral shortfalls into unsecured deficiency claims;
+  \item add any collateral surplus back to the debtor estate;
+  \item run Eisenberg--Noe on the residual unsecured graph.
+\end{enumerate}
+
+The fixed-point logic is then preserved, but it applies to the residual claims
+that should actually be pari passu.
+
+\subsection{Strategic claim creation near clearing}
+
+The strongest strategic issue is not hidden bilateral obligations. Hidden claims
+should simply be ineligible for the current clearing. The dangerous case is a
+visible but late obligation or claim transfer inserted once participants know
+that clearing is near.
+
+Examples include:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item a distressed borrower creates a friendly liability to an affiliated
+  address;
+  \item a creditor transfers claims to a party with different treatment;
+  \item claims are routed through an entity expected to default in order to
+  change the loss allocation;
+  \item a participant front-runs the freeze trigger with a new edge.
+\end{itemize}
+
+The defense is an eligibility and seasoning rule:
+
+\begin{quote}
+Only obligations created before snapshot block $B-k$ enter the current
+clearing. Late obligations roll into the next epoch. Claim transfers preserve
+the original claim age and seniority. New obligations must arise from
+protocol-verified value transfer, not arbitrary IOU creation.
+\end{quote}
+
+This makes the clearing graph a state machine rather than a free-form list of
+asserted debts.
+
+\subsection{Soft deleveraging before hard clearing}
+
+The network does not need to jump directly from normal lending to bankruptcy
+settlement. Clearing can be soft and pre-emptive:
+
+\begin{center}
+\begin{tabular}{ll}
+normal mode & ordinary borrowing, lending, repayment, and transfers,\\
+warning mode & risk limits tighten and new concentration is discouraged,\\
+compression mode & new debt is disabled and repayments remain open,\\
+freeze mode & the eligible graph is snapshotted,\\
+clearing mode & the clearing vector is verified and executed.
+\end{tabular}
+\end{center}
+
+Triggers can be scheduled or risk-based: projected default under a haircut,
+network leverage above a bound, collateral liquidity below a bound, oracle
+deviation, failed margin top-up, participant petition, or governance call.
+
+\subsection{A candidate clearing rule}
+
+A concrete first rule is:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item Snapshot the liability graph and admitted collateral at block $B$.
+  \item Exclude non-seasoned claims from the current epoch.
+  \item Close secured claims against their specific collateral first.
+  \item Convert collateral shortfalls into unsecured deficiency claims.
+  \item Add collateral surplus back to the debtor estate.
+  \item Run Eisenberg--Noe on the residual unsecured graph.
+  \item Execute pro rata payments and, if useful, tokenize unpaid residual
+  claims.
+\end{enumerate}
+
+The rule keeps collateral priority explicit while still using global clearing
+for the part of the system where global clearing is the correct object:
+unsecured residual claims and circular payment dependencies.
+
+\section{Research Questions}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item What is the right trigger: scheduled epoch, solvency breach, governance
+  call, oracle event, or participant petition?
+  \item How should solver bonds and challenges be designed so invalid vectors
+  are cheap to reject and valid vectors are cheap to finalize?
+  \item Can the verifier be compressed with Merkle commitments, fraud proofs, or
+  zero-knowledge proofs for large graphs?
+  \item How do we handle collateral priority without reducing the system back to
+  isolated liquidations?
+  \item Which DeFi liabilities are eligible: vault shares, debt tokens, margin
+  accounts, credit lines, receivables, or RWA notes?
+  \item What strategic behavior appears when agents know that obligations will
+  be globally cleared?
+  \item Can the clearing outputs feed insurance premia, capital buffers, or
+  curator risk limits?
+\end{itemize}
+
+\section{Minimal Viable Experiment}
+
+The first useful implementation should be deliberately narrow:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item single ERC20 numeraire;
+  \item no oracle;
+  \item all external assets are deposited in the clearing contract;
+  \item fixed participant set during each epoch;
+  \item raw liability edges registered on-chain;
+  \item off-chain solver;
+  \item on-chain fixed-point verification;
+  \item optimistic challenge window;
+  \item deterministic integer rounding.
+\end{itemize}
+
+This version is enough to test the central claim: a smart contract can enforce a
+global bankruptcy rule over a liability graph without solving the fixed point
+on-chain.
+
+\section{Connection to Recursive Lending}
+
+The model is especially relevant to recursive vault and lending structures.
+When a vault lends against its own shares, or when vault shares become collateral
+inside another lending venue, the dependency graph can contain cycles. Pairwise
+liquidation sees only the local edge. A global clearing contract sees the cycle.
+
+This suggests a product direction:
+
+\begin{quote}
+Build a credit network where recursive DeFi positions opt into a common
+settlement layer. Normal times use ordinary lending mechanics. Stress times use
+global clearing.
+\end{quote}
+
+The resulting system would sit between two familiar designs. It is not a simple
+AMM or isolated lending market. It is also not a discretionary bankruptcy court.
+It is a rule-based clearing court implemented as a contract.
+
+\section{Near-Term To-Dos}
+
+\begin{itemize}[leftmargin=1.5em]
+  \item Write the single-numeraire contract invariant precisely.
+  \item Work through a three-node cycle example by hand.
+  \item Specify the integer rounding rule and dust ownership.
+  \item Decide whether the first prototype should execute payments directly or
+  mint recovery tokens.
+  \item Compare optimistic verification, full on-chain verification, and zk
+  verification.
+  \item Connect the graph input to YTD or DIG-style dependency extraction.
+\end{itemize}
+
+\section{Varia}
+
+For unwinding thresholds, the relevant asset value is not necessarily
+mark-to-market value. A clearing network should consider computing
+liquidative values: what each position can actually realize when it must be
+unwound through the available exit routes.
+
+This matters because a position can look solvent at quoted prices while being
+insolvent at executable exit depth. The clearing trigger should therefore be
+able to use haircut or liquidation-value estates,
+\[
+  x_i^{\mathrm{liq}} \leq x_i^{\mathrm{mtm}},
+\]
+where $x_i^{\mathrm{liq}}$ reflects pool depth, redemption queues, auction
+discounts, oracle delay, venue concentration, and expected slippage under the
+size of the unwind. In that version, the warning and compression modes are not
+triggered by accounting insolvency alone. They are triggered when the network
+approaches the point where executable liquidation value no longer covers the
+eligible claims.
+
+\bibliographystyle{plain}
+\bibliography{Eisenberg-Noe}
+
+\end{document}
