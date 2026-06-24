@@ -2,10 +2,18 @@
 
 # LaTeX build artifacts
 *.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
 *.log
 *.out
 *.toc
 *.synctex.gz
+*.synctex.gz(busy)
+*.xdv
+Eisenberg-Noe/Eisenberg-Noe.pdf
+Eisenberg-Noe/lmfi5_(debt_networks).pdf
 
 # Claude Code local state
 .claude/worktrees/
