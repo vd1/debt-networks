@@ -1,7 +1,7 @@
 # Bluprynt x Sigma Labs - call prep
 
 When: today, 2026-06-22, 17:00
-DD memo: `../dueDil/2026-06-22-bluprynt-compliance-os.md`
+DD memo: `../../dueDil/2026-06-22-bluprynt-compliance-os.md`
 
 ## Room
 

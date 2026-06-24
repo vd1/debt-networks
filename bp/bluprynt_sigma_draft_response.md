@@ -28,6 +28,7 @@ The engine, graph, adapters and monitoring stack stay with Bluprynt, with no per
 7. Non-compete & non-circumvention (your Step 06): bounded
 Mutual non-circumvention: accepted.
 Non-compete: accepted only if bounded on all four axes, and binding both sides symmetrically:
+Commercial premise: this is a two-technology, two-market collaboration. Bluprynt brings PoC, the regulator / issuer interface, and its collateral-disclosure distribution. Sigma brings YTD / DIG, loss models, and its fund, curator, research and data distribution. Each party remains free to sell its own technology standalone in its own market. Each party may also sell the other party's technology as part of a combined offer, with revenue share only on that combined sale. The non-compete should therefore prevent selling against each other in the other party's home market, not block either party's standalone business.
 Purpose / finality: issuer- and regulator-facing collateral disclosure for tokenized RWAs, and nothing else. It must not reach Sigma's or Ellen Capital's fund, curator, research or data activities.
 
 Sector: tokenized-RWA collateral disclosure only.
@@ -35,7 +36,7 @@ Time: limited to the agreement term plus a 12-month tail; not perpetual.
 Geography: [as applicable]; we note that for a digital product the purpose and sector bounds are the operative ones.
 
 8. Channel economics (your Step 04): accepted, secondary
-We accept the non-exclusive resale licence and a 30% revenue share to Sigma, net of pass-through data and monitoring COGS, on accounts Sigma sources, with the trailing share on those accounts surviving wind-down. Noted as secondary to §3–§4.
+We accept the non-exclusive resale licence and a 30% revenue share to Sigma, net of pass-through data and monitoring COGS, on accounts Sigma sources, with the trailing share on those accounts surviving wind-down. Symmetrically, if Bluprynt sources an account for a combined Sigma-plus-Bluprynt product in Sigma's home market, Bluprynt should receive the agreed channel share. No revenue share applies when either party sells its own technology standalone. Noted as secondary to §3–§4.
 
 9. Acceptance & validation (your Steps 01 / 03, Schedule A): accepted
 Deliverables gated on documented assumptions, sensitivity analysis, backtest against named historical depeg events, and stated false-positive / false-negative rates, each adopted into production only on a met accuracy / calibration threshold. We're aligned that pay should reward model quality, not volume.
