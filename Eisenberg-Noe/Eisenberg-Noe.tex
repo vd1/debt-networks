@@ -18,7 +18,9 @@
 }
 
 \newtheorem{definition}{Definition}
+\newtheorem{lemma}{Lemma}
 \newtheorem{proposition}{Proposition}
+\newtheorem{theorem}{Theorem}
 
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\barp}{\bar p}
@@ -35,14 +37,16 @@
 The research idea is to implement a self-clearing credit network on-chain.
 Borrowers and lenders, or pools thereof in lending architectures such as
 Morpho, Aave, and related venues, do not resolve distress through isolated
-liquidations or first-come-first-served withdrawals. They opt into a common
-liability graph.
+liquidations or first-come-first-served withdrawals (lenders running to the
+exit). They opt into a common liability graph.
 When the network enters settlement, a smart contract applies an
 Eisenberg--Noe style global bankruptcy rule: each debtor pays what it can, each
 creditor receives pro rata within its claim class, and circular obligations are
 cleared by a fixed point. The purpose of the contract is not to make default
 disappear. It is to replace local liquidation races with a verifiable global
-clearing vector.
+clearing vector, resulting in a more capitalistically efficient structure.
+
+It is unclear whether the ide can be implemented in a game-theoretically robust way.
 \end{abstract}
 
 \section{Motivation}
@@ -976,6 +980,520 @@ size of the unwind. In that version, the warning and compression modes are not
 triggered by accounting insolvency alone. They are triggered when the network
 approaches the point where executable liquidation value no longer covers the
 eligible claims.
+
+\appendix
+
+\section{Fixed-Point Algebra}
+
+This appendix consolidates the proof-level material from the source notes. It
+is written for the single-numeraire Eisenberg--Noe map
+\[
+  \Phi(p)=\barp\wedge (x+\Pi^\top p)
+\]
+on the box
+\[
+  X=\prod_i[0,\barp_i].
+\]
+The order is the product order.
+
+\begin{lemma}[Tarski certificate]
+If $\Phi:X\to X$ is monotone, then the fixed points of $\Phi$ form a non-empty
+complete lattice. In particular, $\Phi$ has a greatest fixed point and a least
+fixed point.
+\end{lemma}
+
+\begin{proof}
+Let $P=\{p\in X:p\leq\Phi(p)\}$ be the set of pre-fixed points and set
+$p^\star=\sup P$. For every $p\in P$,
+\[
+  p\leq \Phi(p)\leq \Phi(p^\star),
+\]
+so $p^\star\leq\Phi(p^\star)$. Thus $p^\star\in P$. Monotonicity gives
+$\Phi(p^\star)\leq\Phi^2(p^\star)$, hence $\Phi(p^\star)\in P$, and therefore
+$\Phi(p^\star)\leq p^\star$. Thus $p^\star=\Phi(p^\star)$.
+
+The dual construction with post-fixed points
+\[
+  P'=\{p\in X:p\geq\Phi(p)\}
+\]
+gives the least fixed point. Closure of $P$ under suprema and of $P'$ under
+infima gives the lattice property.
+\end{proof}
+
+For computation, the relevant sequence is the top iteration
+\[
+  p^0=\barp,\qquad p^{t+1}=\Phi(p^t).
+\]
+Since $\Phi(\barp)\leq\barp$ and $\Phi$ is monotone, this sequence decreases.
+In finite integer arithmetic with a deterministic rounding rule, it reaches a
+stationary point. That terminal point is the greatest fixed point.
+
+\begin{lemma}[Comparable fixed points have the same equity values]
+In the frictionless Eisenberg--Noe model, if $p$ and $q$ are fixed points with
+$p\leq q$, then
+\[
+  v_i(p)=v_i(q)
+\]
+for every participant $i$.
+\end{lemma}
+
+\begin{proof}
+For a fixed point,
+\[
+  v_i(p)=x_i+\sum_j\Pi_{ji}p_j-p_i.
+\]
+Since the equivalent formula
+\[
+  v_i(p)=\left(x_i+\sum_j\Pi_{ji}p_j-\barp_i\right)_+
+\]
+is monotone in $p$, $p\leq q$ implies $v_i(p)\leq v_i(q)$ for every $i$.
+Summing the fixed-point identity gives
+\[
+  \sum_i(v_i(q)-v_i(p))
+  =
+  \sum_i\sum_j\Pi_{ji}(q_j-p_j)-\sum_i(q_i-p_i).
+\]
+Rows of $\Pi$ sum to one for nodes with positive total liabilities, and nodes
+with zero total liabilities have $p_i=q_i=0$. The right-hand side is therefore
+zero. A pointwise non-negative vector with zero sum is zero.
+\end{proof}
+
+The previous lemma is a peculiarity of the frictionless model. Once default
+costs, liquidation losses, or rescue rules are introduced, lower fixed points
+can destroy value. For a contract verifier this means:
+\[
+  \text{plain EN: uniqueness or comparability often makes fixed-point checks
+  sufficient,}
+\]
+but
+\[
+  \text{default-cost extensions: the greatest fixed point should be explicit.}
+\]
+
+\section{Fusion and Fission Algebra}
+
+Let $f:N\to M$ group old participants into new participants. The fusion
+operator sends a debt network $(x,L)$ on $N$ to a coarser network
+$(\widehat f(x),\widehat f(L))$ on $M$ by
+\[
+  \widehat f(x)_a=\sum_{i\in f^{-1}(a)}x_i
+\]
+and, for $a\neq b$,
+\[
+  \widehat f(L)_{ab}
+  =
+  \sum_{i\in f^{-1}(a)}
+  \sum_{j\in f^{-1}(b)}L_{ij}.
+\]
+Internal debts are removed by the fusion. Hence
+\[
+  \overline{\widehat f(L)}_a
+  =
+  \sum_{i\in f^{-1}(a)}\barp_i
+  -
+  \sum_{i,j\in f^{-1}(a)}L_{ij}.
+\]
+
+\begin{proposition}[Fusion of solvent nodes]
+Suppose two nodes $a,b$ are solvent at the payment vector $\barp$, and suppose
+the fusion cost is zero. Then the fused node $[ab]$ is solvent in the fused
+network.
+\end{proposition}
+
+\begin{proof}
+Solvency of $a$ and $b$ gives
+\[
+  x_a+\sum_{j\neq a,b}L_{ja}+L_{ba}\geq \barp_a,
+  \qquad
+  x_b+\sum_{j\neq a,b}L_{jb}+L_{ab}\geq \barp_b.
+\]
+Adding the inequalities and removing the internal claims $L_{ab}$ and $L_{ba}$
+gives
+\[
+  x_a+x_b+\sum_{j\neq a,b}(L_{ja}+L_{jb})
+  \geq
+  \barp_a+\barp_b-L_{ab}-L_{ba}.
+\]
+The right-hand side is precisely the fused node's external liability. The
+left-hand side is its external estate.
+\end{proof}
+
+If fusion has cost $\kappa(a,b)$, the same proof works only when the pooled
+surplus is at least $\kappa(a,b)$. This is the formal version of the rescue
+consortium intuition: fusion can preserve solvency, but only if the legal,
+operational, or liquidation cost of the merger does not absorb the surplus.
+
+\begin{proposition}[Fusion of zero-insolvent nodes]
+If nodes $a$ and $b$ are both $0$-insolvent, then their zero-cost fusion is
+$0$-insolvent.
+\end{proposition}
+
+\begin{proof}
+Zero-insolvency means
+\[
+  x_a+\sum_jL_{ja}<\barp_a,
+  \qquad
+  x_b+\sum_jL_{jb}<\barp_b.
+\]
+Adding and cancelling the two internal liabilities gives
+\[
+  x_a+x_b+\sum_{j\neq a,b}(L_{ja}+L_{jb})
+  <
+  \barp_a+\barp_b-L_{ab}-L_{ba}.
+\]
+This is exactly the fused zero-insolvency condition.
+\end{proof}
+
+For higher default levels, let $\Lambda^{(0)}=\barp$ and
+\[
+  \Lambda^{(\mu+1)}=\Phi(\Lambda^{(\mu)}).
+\]
+A node is $\mu$-insolvent if it is solvent through step $\mu-1$ and fails at
+step $\mu$. The source note's general fusion calculation can be expressed as:
+if $a$ and $b$ are both $\mu$-insolvent, then the fused node is not guaranteed
+to remain $\mu-1$-solvent unless
+\[
+  (x_a+\sum_j\Lambda^{(\mu-1)}_j\Pi_{ja})
+  +
+  (x_b+\sum_j\Lambda^{(\mu-1)}_j\Pi_{jb})
+  \geq
+  \barp_a+\barp_b+\kappa(a,b).
+\]
+If that inequality holds and both nodes fail at level $\mu$, then the fused
+node also fails at level $\mu$. Thus same-level fusion is not a general cure
+for contagion. Mixed-level fusion is the interesting rescue case: a later
+defaulting or solvent node may support an earlier-defaulting node if the
+rescued incoming payments elsewhere in the graph exceed the fusion or rescue
+cost.
+
+Fission runs in the opposite direction. A distressed node can try to split into
+multiple identities, place ordinary creditors in one identity, place friendly
+claims in another, and use proportionality to redirect estate. The abstract
+fission attack is:
+
+\begin{enumerate}[leftmargin=1.5em]
+  \item split node $u$ into $u_1,u_2$;
+  \item assign outside liabilities to $u_1$;
+  \item assign assets or incoming claims selectively;
+  \item create a large internal or affiliated claim $u_1\to u_2$.
+\end{enumerate}
+
+As the affiliated claim grows, the pro rata share of the default estate going
+to the affiliate grows. A clearing contract therefore needs economic identity,
+claim provenance, seasoning, and internal-claim labels. Without these rules,
+proportionality can be used as a priority-transfer mechanism.
+
+\section{Default Costs and Two-Bank Calculus}
+
+Rogers--Veraart style default costs replace the frictionless clearing map with
+a map of the following form:
+\[
+  \Phi_i^{\alpha,\beta}(p)=
+  \begin{cases}
+    \barp_i, & x_i+\sum_j\Pi_{ji}p_j\geq \barp_i,\\
+    \alpha x_i+\beta\sum_j\Pi_{ji}p_j, &
+      x_i+\sum_j\Pi_{ji}p_j<\barp_i,
+  \end{cases}
+\]
+where $\alpha,\beta\in[0,1]$. The parameters are reduced-form recovery
+coefficients for outside assets and incoming payments after default.
+
+The two-node symmetric example in the body shows multiplicity. With
+\[
+  L=
+  \begin{pmatrix}
+    0 & \gamma\\
+    \gamma & 0
+  \end{pmatrix},
+  \qquad
+  x=
+  \begin{pmatrix}
+    1\\
+    1
+  \end{pmatrix},
+  \qquad
+  \alpha=\beta=\frac12,
+  \qquad
+  \gamma=2.2,
+\]
+both $(2.2,2.2)$ and $(1,1)$ are fixed points of the default-cost map. The
+lower point treats both nodes as defaulting and applies haircuts; the upper
+point pays in full. The upper point Pareto-dominates the lower point.
+
+For a general two-bank system with liabilities $L_{12}$ and $L_{21}$, the
+double-default equations are
+\[
+  p_1=\alpha x_1+\beta p_2,\qquad
+  p_2=\alpha x_2+\beta p_1.
+\]
+If $\beta<1$, the candidate double-default fixed point is
+\[
+  p_1=\alpha\frac{x_1+\beta x_2}{1-\beta^2},
+  \qquad
+  p_2=\alpha\frac{x_2+\beta x_1}{1-\beta^2}.
+\]
+It is valid only if both nodes are indeed below their liabilities:
+\[
+  x_1+p_2<L_{12},\qquad x_2+p_1<L_{21}.
+\]
+If $\beta=1$ and $\alpha>0$, simultaneous default in a two-node closed system
+cannot occur under the inequalities
+\[
+  x_1+L_{21}<L_{12},\qquad x_2+L_{12}<L_{21},
+\]
+because adding them gives $x_1+x_2<0$. This is why default costs change the
+fixed-point geometry so sharply: they can create lower self-confirming default
+states that are impossible in the frictionless two-bank case.
+
+\section{Pre-Clearing Game Calculus}
+
+The pre-clearing game lets participants change assets and liabilities before
+the graph is frozen. The elementary moves are lending and repayment:
+\[
+  \text{loan } i\to j\text{ of }x:
+  \quad
+  x_i\leftarrow x_i-x,\quad
+  x_j\leftarrow x_j+x,\quad
+  L_{ji}\leftarrow L_{ji}+x,
+\]
+\[
+  \text{repayment } j\to i\text{ of }y:
+  \quad
+  x_j\leftarrow x_j-y,\quad
+  x_i\leftarrow x_i+y,\quad
+  L_{ji}\leftarrow L_{ji}-y.
+\]
+Total assets are unchanged. The allocation rule changes because the liability
+matrix changes.
+
+\subsection{Fake-debt sink calculation}
+
+In the three-node manipulation, node $1$ is distressed, node $2$ is an outside
+creditor, and node $n$ is a potential affiliated claimant. The non-zero claims
+are $L_{12}$, $L_{1n}$, and $L_{21}$. If node $n$ can add a claim $S_1$ against
+node $1$, then the share of node $1$'s default estate going to $n$ is
+\[
+  h(S_1)=
+  \frac{L_{1n}+S_1}{L_{1n}+S_1+L_{12}}.
+\]
+The derivative is
+\[
+  h'(S_1)=
+  \frac{L_{12}}{(L_{1n}+S_1+L_{12})^2}>0.
+\]
+Thus unseasoned affiliated debt monotonically increases the affiliate's share
+of the estate.
+
+With a default-cost coefficient $\beta$, one reduced-form payoff for $n$ is
+\[
+  \mu(S_1,S_2)=
+  \beta(S_2+L_{21})
+  \frac{L_{1n}+S_1}{L_{1n}+S_1+L_{12}}
+  -S_2,
+\]
+where $S_1$ is extra debt from $1$ to $n$ and $S_2$ is extra debt from $n$ to
+$1$. Its partial derivatives are
+\[
+  \frac{\partial\mu}{\partial S_1}
+  =
+  \beta(S_2+L_{21})
+  \frac{L_{12}}{(L_{1n}+S_1+L_{12})^2}>0,
+\]
+and
+\[
+  \frac{\partial\mu}{\partial S_2}
+  =
+  \beta
+  \frac{L_{1n}+S_1}{L_{1n}+S_1+L_{12}}
+  -1<0.
+\]
+This toy payoff says: the attacker wants a large claim against the distressed
+node, but does not want to create a matching claim in the other direction.
+
+If the accounting also charges the attacker for the new claim and treats
+asymmetric lending as a real transfer of assets, the payoff becomes
+\[
+  \mu_1(S_1,S_2)=
+  \left(\alpha(S_1-S_2)+\beta(S_2+L_{21})\right)
+  \frac{L_{1n}+S_1}{L_{1n}+S_1+L_{12}}
+  -S_2-S_1.
+\]
+Under the source note's constraints
+\[
+  S_1\geq S_2,\qquad
+  L_{21}+S_2<L_{12}+L_{1n}+S_1,
+\]
+and with $\alpha,\beta\leq1$, the derivative calculation points back toward
+$S_1=S_2=0$. This is the useful distinction: fake eligible debt is dangerous,
+but genuine value transfer with correct accounting is much harder to exploit.
+
+\subsection{Standstill theorem as a working claim}
+
+The source note states the following theorem for a closed three-player game
+with no asset entry or exit.
+
+\begin{theorem}[Working standstill theorem]
+Under the solvency assumptions of the three-node pre-clearing game, the Nash
+response of player $n$ is to repay
+\[
+  \min(L_{n1},x_n)
+\]
+to player $1$. Player $1$ is indifferent along the analogous repayment margin
+and can repay $\min(L_{1n},x_1)$.
+\end{theorem}
+
+The source note marks this theorem as still needing verification in the fully
+general model. Its mechanism-design implication is nevertheless clear: if
+players can repay selectively after distress is visible, they may choose
+prepayments that improve their bilateral position while violating pari passu
+treatment for other creditors. A standstill rule should therefore classify
+post-warning moves as ordinary payments, rescue funding, preference payments,
+or junior claims.
+
+\section{Early Repayment and Rescue}
+
+Let node $0$ be insolvent and nodes $1,\ldots,n$ be creditors. Suppose node $0$
+makes early repayments $x_i$ before hard clearing, with
+\[
+  \sum_i x_i\leq x_0,\qquad x_i\leq L_{0i}.
+\]
+Set
+\[
+  A(x)=\alpha\left(x_0-\sum_jx_j\right)+\beta\sum_jL_{j0},
+  \qquad
+  B(x)=\sum_j(L_{0j}-x_j).
+\]
+Ignoring constants that do not depend on node $0$'s repayment vector, creditor
+$i$'s post-clearing recovery is
+\[
+  R_i(x)=
+  x_i+
+  A(x)\frac{L_{0i}-x_i}{B(x)}
+  +\sum_{j\neq0}L_{ji}-\sum_jL_{ij}+x_i^{\mathrm{outside}}.
+\]
+The aggregate effect is simple:
+\[
+  \frac{\partial}{\partial x_i}\sum_kR_k=1-\alpha.
+\]
+Thus early repayment can preserve aggregate value when $\alpha<1$, because
+assets paid before default avoid the default haircut.
+
+The individual derivative is not uniformly positive:
+\[
+  \frac{\partial R_i}{\partial x_i}
+  =
+  1
+  -\alpha\frac{L_{0i}-x_i}{B(x)}
+  -
+  A(x)
+  \frac{\sum_{j\neq i}(L_{0j}-x_j)}{B(x)^2}.
+\]
+So the same repayment can raise total recovery and lower some creditor's
+recovery. This is the core standstill dilemma.
+
+A temporal variant lets repayment occur over dates. Write
+\[
+  x_i(t)
+\]
+for the repayment from node $0$ to creditor $i$ at date $t$, with
+\[
+  x_i(t+1)\leq x_0(t)-\sum_{s\leq t}x_i(s),
+  \qquad
+  L_{0i}(t+1)=L_{0i}(t)-x_i(t+1).
+\]
+If node $0$ is already $0$-insolvent, later repayment does not make node $0$
+solvent. It can, however, make a level-one creditor solvent by improving that
+creditor's cash position before the next clearing check.
+
+For a single creditor $1$, the reduced-form condition from the source note is:
+repayment $x$ can restore solvency if
+\[
+  x(1-\alpha)
+  \geq
+  \sum_jL_{0j}
+  -
+  \beta\sum_jL_{j0}
+  -
+  \alpha x_0.
+\]
+This inequality is a useful design test. If the left-hand side cannot reach the
+right-hand side under the repayment budget, then delaying clearing only creates
+preference risk. If it can, controlled repayment may be a genuine rescue move.
+
+\section{Temporal Streams and Sequence Spaces}
+
+The source notes explored debts as finite payment streams rather than scalar
+amounts. The minimal stream model uses $c_{00}$, the vector space of finitely
+supported real sequences, with the componentwise order. A liability edge then
+has the form
+\[
+  L_{ij}\in c_{00},
+\]
+and clearing can be applied to dated cash-flow vectors.
+
+The first valuation layer can be a fixed discount functional
+\[
+  \operatorname{val}(z)=\sum_{t\geq0}\gamma^t z_t.
+\]
+Rescheduling is then a transformation that replaces one stream by another with
+the same or lower discounted value, subject to creditor consent or protocol
+rules. This is the mathematical form of maturity extension, coupon reduction,
+or recovery-token issuance.
+
+The functional-analytic scratchpad in the source notes records the following
+caveats:
+\[
+  c_{00}\subset c_0\subset \ell_\infty.
+\]
+The space $c_{00}$ is not closed in $\ell_\infty$: the finitely supported
+sequences
+\[
+  z^k_t=\frac{\mathbf 1_{\{t\leq k\}}}{t+1}
+\]
+converge uniformly to a sequence in $c_0$ that is not finitely supported. The
+space $c_0$ is not complete as an order-theoretic domain for arbitrary
+increasing chains when suprema are computed pointwise. For example, shifted
+tails of a positive null sequence can have pointwise supremum equal to the
+constant-one sequence, which is not in $c_0$.
+
+The protocol implication is conservative: the MVP should use finite streams,
+bounded horizons, and explicit valuation rules. Infinite-horizon sequence
+spaces are research material, not implementation machinery for a first
+contract.
+
+\section{Open Research Backlog}
+
+The source notes also contained questions that should remain visible even
+though they are not first-contract requirements:
+
+\begin{itemize}[leftmargin=1.5em]
+  \item Can a useful clearing be computed on a visible subgraph, or does every
+  serious rule require near-panoptic exposure data?
+  \item Can peer surveillance, commitments, or privacy proofs reveal enough
+  information without publishing every bilateral claim?
+  \item What objective should a clearing mechanism optimize: total value,
+  speed, rescue optionality, minimum defaults, fairness, or incentive
+  compatibility?
+  \item Can non-proportional allocation rules, including distance-weighted or
+  optimal-transport-like rules, improve on pari passu treatment without
+  creating a new manipulation surface?
+  \item Is there a game for which the Eisenberg--Noe map is a best-response
+  dynamic or a Nash equilibrium condition?
+  \item Can clearing be made modular, so that subnetworks publish sufficient
+  summaries rather than their full internal graph?
+  \item How sensitive is the greatest clearing vector to conservative
+  perturbations of the liability matrix, especially symmetric debt additions?
+  \item Can rescue auctions choose fusions or rescue lenders while preserving
+  external creditor recoveries?
+  \item What is the right no-harm proof for a pre-clearing repayment or rescue
+  loan?
+  \item Is there a useful max-plus or tropical formulation of clearing paths
+  and default levels?
+  \item How should Roughgarden-style Sybil-proofness questions be translated
+  from reward sharing to bankruptcy allocation?
+  \item Which liquidative value function should replace mark-to-market value in
+  warning mode, and how should it be challenged?
+\end{itemize}
 
 \bibliographystyle{plain}
 \bibliography{Eisenberg-Noe}
