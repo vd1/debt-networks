@@ -9,6 +9,9 @@
 \usepackage{enumitem}
 \usepackage{geometry}
 \usepackage{hyperref}
+\usepackage{tikz}
+
+\usetikzlibrary{arrows.meta,positioning}
 
 \geometry{margin=1in}
 \hypersetup{
@@ -46,7 +49,8 @@ cleared by a fixed point. The purpose of the contract is not to make default
 disappear. It is to replace local liquidation races with a verifiable global
 clearing vector, resulting in a more capitalistically efficient structure.
 
-It is unclear whether the ide can be implemented in a game-theoretically robust way.
+It is unclear whether the idea on a form or another
+can be implemented in a game-theoretically robust way.
 \end{abstract}
 
 \section{Motivation}
@@ -76,18 +80,298 @@ and executes the fixed point?
 
 \section{Debt Networks}
 
-The older debt-network note starts from a useful observation: debt is a
-directed graph, but solvency is not a radius-one property. A participant can
-look solvent against its immediate creditors and debtors while still being
-exposed to a payment failure farther away in the graph. Conversely, a
-participant can look weak locally but survive if enough incoming payments clear.
+Debt is a directed graph, but solvency is not a radius-one property. A
+radius-one test that books immediate incoming claims at face value gives only a
+best-case view. When the radius expands, some of those incoming claims may be
+impaired by failures farther away, so the available estate can only fall
+relative to that local face-value calculation. The question is how far a local
+solvency certificate survives once incoming claims are cleared through the
+whole graph.
 
-This is the local/global tension. Contracts are written bilaterally, but
-insolvency is settled globally. In a dense credit network, a lender does not
-only need to know whether its direct borrower is solvent. It also needs to know
-what hidden liabilities, pledged claims, and incoming payments support that
-borrower. This is why rumours, reputation, disclosure, and regulation matter in
-ordinary finance, and why observability and claim eligibility matter in DeFi.
+\subsection{Increasing the radius}
+
+This radius expansion is also an algorithm. 
+
+Let $N=\{1,\ldots,n\}$ be the set of participants. A debt network consists of
+external assets $x_i\geq0$ and a raw liability matrix $L$. The entry
+$L_{ij}\geq0$ is the amount participant $i$ has promised to pay participant
+$j$, with $L_{ii}=0$. (codex: could also be the amount repaid per time unit?)
+
+
+The total nominal payment due from $i$ is
+\[
+  \barp_i=\sum_j L_{ij}
+\]
+The matrix $\Pi \in \R_+^{n \times n}$ records relative liabilities:
+$\Pi_{ij}$ is the fraction of $i$'s total liabilities owed to $j$. If
+$\barp_i>0$ then
+\[
+  \sum_j \Pi_{ij}=1
+\]
+If $\barp_i=0$, set $\Pi_{ij}=0$ for all $j$.
+
+
+Start from the face-value payment vector
+\[
+  p^0=\barp
+\]
+and iterate
+\[
+  p^{k+1}=\Phi(p^k)=\barp\wedge(x+\Pi^\top p^k)
+\]
+or, componentwise,
+\[
+  p_i^{k+1}
+  =
+  \min\left\{
+    \barp_i,\,
+    x_i+\sum_j\Pi_{ji}p_j^k
+  \right\}.
+\]
+Since $p^0_j=\barp_j$, the first update is
+\[
+  p_i^1
+  =
+  \min\left\{
+    \barp_i,\,
+    x_i+\sum_j L_{ji}
+  \right\}.
+\]
+Thus the first-round default test is
+\[
+  \barp_i>x_i+\sum_jL_{ji}.
+\]
+In that case, even under idealized conditions in which all direct debtors pay
+at face value, player $i$ does not receive enough to pay what it owes, and
+\[
+  p_i^1=x_i+\sum_jL_{ji}<\barp_i=p_i^0.
+\]
+If instead
+\[
+  \barp_i\leq x_i+\sum_jL_{ji},
+\]
+then $p_i^1=p_i^0$. Notice the direction of the indices: $L_{ij}$ is what
+$i$ owes to others, while $L_{ji}$ is what others owe to $i$.
+The first step values each node's immediate incoming claims as if all direct
+debtors paid at face value. The next step discounts those payments by one more
+layer of non-payment, and so on. Since $\Phi$ is monotone and
+$\Phi(\barp)\leq\barp$, the sequence decreases:
+\[
+  \barp=p^0\geq p^1\geq p^2\geq\cdots.
+\]
+Its limit is the greatest clearing vector for the product order on payment
+vectors. In finite integer arithmetic with a deterministic rounding rule, the
+iteration stops when $p^{k+1}=p^k$.
+
+\subsection{Sinkhorn reminiscence}
+The iteration is reminiscent of Sinkhorn scaling. In the Sinkhorn problem, one
+starts with a nonnegative matrix $K$ and target row and column marginals
+$r,c\geq0$ with the same total mass. The goal is to find positive scaling
+vectors $u$ and $v$ such that
+\[
+  P=\operatorname{diag}(u)K\operatorname{diag}(v)
+\]
+has
+\[
+  P\mathbf{1}=r,\qquad P^\top\mathbf{1}=c.
+\]
+The entries of $u$ scale rows and the entries of $v$ scale columns. They are
+only determined up to a common reciprocal factor: replacing $(u,v)$ by
+$(\lambda u,\lambda^{-1}v)$ leaves $P$ unchanged.
+
+For fixed $v$, the row equations force
+\[
+  u_i=\frac{r_i}{(Kv)_i}.
+\]
+For fixed $u$, the column equations force
+\[
+  v_j=\frac{c_j}{(K^\top u)_j}.
+\]
+The Sinkhorn algorithm alternates these two normalizations. A standard
+convergence proof views the two normalization steps as alternating
+Kullback--Leibler projections onto the convex sets of matrices with the right
+row marginals and the right column marginals. The KL Pythagorean identity gives
+a monotone decrease of the divergence to the feasible set, and under positivity
+or the usual support conditions the iterates converge to the unique scaled
+matrix with those marginals. Another proof uses Birkhoff contraction in
+Hilbert's projective metric.
+
+Both Sinkhorn and clearing repeatedly propagate local balance constraints
+through a nonnegative network. The difference is that Sinkhorn enforces
+prescribed marginals by multiplicative rescaling, while clearing enforces
+limited liability by an additive capped map:
+\[
+  p\mapsto \barp\wedge(x+\Pi^\top p).
+\]
+It is a bankruptcy-balancing algorithm rather than a matrix-scaling algorithm.
+
+The comparison becomes more formal if each participant is split into a borrower
+side and a lender side:
+\[
+  i^- \quad\text{and}\quad i^+.
+\]
+Each liability $L_{ij}$ becomes a bipartite edge
+\[
+  i^-\longrightarrow j^+.
+\]
+The participant is recovered by coupling the two copies: what $i^+$ receives,
+plus external assets $x_i$, becomes the estate from which $i^-$ pays. The
+radius iteration can then be written as message passing on this borrower/lender
+double. Given a total payment $p_i^k$ by borrower $i^-$, the edge payment to
+lender $j^+$ is
+\[
+  q_{ij}^k=
+  \begin{cases}
+    L_{ij}\dfrac{p_i^k}{\barp_i}, & \barp_i>0,\\
+    0, & \barp_i=0.
+  \end{cases}
+\]
+The lender side of participant $i$ receives
+\[
+  y_i^k=x_i+\sum_j q_{ji}^k,
+\]
+and the borrower side updates its payment capacity by
+\[
+  p_i^{k+1}=\min\{\barp_i,y_i^k\}.
+\]
+Collapsing these three lines gives the original clearing update
+\[
+  p_i^{k+1}
+  =
+  \min\left\{
+    \barp_i,\,
+    x_i+\sum_j\Pi_{ji}p_j^k
+  \right\}.
+\]
+So the algorithm is not literally Sinkhorn scaling on $L$. It is a capped
+bipartite message-passing algorithm on the borrower/lender double of the debt
+graph.
+
+\subsection{Contagion clock}
+Iteration rounds define a contagion clock. Define the default set after
+round $k$ by
+\[
+  D^k=\{i:p_i^k<\barp_i\}.
+\]
+Because the payment sequence decreases componentwise, the default sets increase:
+\[
+  D^0\subseteq D^1\subseteq D^2\subseteq\cdots.
+\]
+A node that first enters $D^k$ is $k$-insolvent: it looked solvent under
+shorter-radius information, but not once payment impairment had propagated far
+enough through the graph.
+
+A single plateau $D^{k+1}=D^k$ is not by itself a certificate that the final
+default set has been found. In a cyclic default set, the identities of the
+defaulting nodes may stay fixed while their payments continue to decrease.
+Those lower payments can later push a node outside $D^k$ into default.
+
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}[
+    >=Latex,
+    participant/.style={circle,draw,minimum size=9mm},
+    sink/.style={rectangle,draw,rounded corners=2pt,minimum height=7mm},
+    liability/.style={->,thick},
+    every node/.style={font=\small}
+  ]
+    \node[participant] (n1) at (0,0) {$1$};
+    \node[participant] (n2) at (3,0) {$2$};
+    \node[participant] (n3) at (6,0) {$3$};
+    \node[sink] (out) at (3,-2) {Outside};
+
+    \node[below=3pt of n1] {$x_1=0.10$};
+    \node[below=3pt of n2] {$x_2=0.10$};
+    \node[below=3pt of n3] {$x_3=0.82$};
+
+    \draw[liability,bend left=18] (n1) to node[above] {$0.8$} (n2);
+    \draw[liability,bend left=18] (n2) to node[below] {$0.8$} (n1);
+    \draw[liability] (n2) to node[above] {$0.2$} (n3);
+    \draw[liability] (n1) to node[left] {$0.2$} (out);
+    \draw[liability] (n3) to node[right] {$1.0$} (out);
+  \end{tikzpicture}
+  \caption{A cyclic default set can keep reducing payments after its membership
+  stops changing for one round.}
+  \label{fig:plateau-not-final}
+\end{figure}
+
+For the graph in Figure~\ref{fig:plateau-not-final}, the first payment vectors
+are
+\[
+  p^0=(1,1,1),
+\]
+\[
+  p^1=(0.90,0.90,1),
+\]
+\[
+  p^2=(0.82,0.82,1),
+\]
+and
+\[
+  p^3=(0.756,0.756,0.984).
+\]
+Therefore the default sets are
+\[
+  D^0=\varnothing,\qquad
+  D^1=\{1,2\},\qquad
+  D^2=\{1,2\},\qquad
+  D^3=\{1,2,3\}.
+\]
+This is the advertised plateau:
+\[
+  D^2=D^1
+\]
+for one round, but the final default set has not yet been reached.
+
+This suggests two related procedures. The raw radius iteration is conceptual:
+it propagates payment impairment one step at a time and may keep adjusting
+real-valued payments around cycles. The finite algorithm is an active-set
+algorithm. It does not wait for the Picard sequence to converge. Instead, it
+treats a candidate default set as a hypothesis and checks it exactly.
+
+Given a candidate default set $D$, let $S=N\setminus D$ and assume nodes in $S$
+pay at face value:
+\[
+  p_S=\barp_S.
+\]
+Then the payments of defaulting nodes should solve the linear system
+\[
+  p_D=x_D+\Pi_{DD}^{\top}p_D+\Pi_{SD}^{\top}\barp_S,
+\]
+or
+\[
+  (I-\Pi_{DD}^{\top})p_D=x_D+\Pi_{SD}^{\top}\barp_S.
+\]
+This solve is not claiming that the default sequence has already converged. It
+computes the fixed point conditional on the hypothesis that exactly the nodes
+in $D$ default and the nodes in $S$ do not. 
+
+After solving it, check every node in $S$ is effectively solvent:
+\[
+  x_i+\sum_{j\in D}\Pi_{ji}p_j+\sum_{j\in S}\Pi_{ji}\barp_j\geq \barp_i.
+\]
+If the check holds for all $i\in S$, the clearing vector has been found. If
+some node in $S$ fails the check, add the failing nodes to $D$ and solve again.
+Each strict update adds at least one node to $D$, so this default-set algorithm
+terminates after at most $n$ updates, modulo the linear algebra solve on the
+current default set.
+
+Thus the radius iteration gives the contagion intuition, while the active-set
+solve gives the finite computation. On an acyclic graph, naive iteration
+stabilizes after the longest relevant directed path. On a graph with cycles,
+raw scalar iteration can keep moving after the default information has reached
+the cycle. The linear solve jumps directly to the payment vector implied by a
+candidate default set; the subsequent inequality check says whether that
+candidate was closed under contagion.
+
+\subsection{Historically}
+This algorithm illustrates a local/global tension. Contracts are written
+bilaterally, but insolvency is (or should be, see below) settled globally.
+In a dense credit network, a lender does not only need to know whether its
+direct borrower is solvent. It also needs to know what hidden liabilities,
+pledged claims, and incoming payments support that borrower. This is why
+rumours, reputation, disclosure, and regulation matter in ordinary finance,
+and why observability and claim eligibility matter in DeFi.
 
 Historical debt-entanglement cases make the same point. Repo market stress in
 the 1980s showed that apparently safe repo chains can become system-wide
@@ -109,20 +393,7 @@ For smart contracts, the debt-network view turns into three design questions:
 
 \section{The Clearing Model}
 
-Let $N=\{1,\ldots,n\}$ be a set of participants. A debt network consists of
-external assets $x_i\geq0$ and a raw liability matrix $L$. The entry
-$L_{ij}\geq0$ is the amount participant $i$ has promised to pay participant
-$j$, with $L_{ii}=0$. The total nominal payment due from $i$ is
-\[
-  \barp_i=\sum_j L_{ij}.
-\]
-The matrix $\Pi \in \R_+^{n \times n}$ records relative liabilities:
-$\Pi_{ij}$ is the fraction of $i$'s total liabilities owed to $j$. If
-$\barp_i>0$ then
-\[
-  \sum_j \Pi_{ij}=1.
-\]
-If $\barp_i=0$, set $\Pi_{ij}=0$ for all $j$.
+Same notations as above.
 
 A clearing payment vector $p \in \R_+^n$ satisfies
 \[
@@ -156,6 +427,67 @@ surplus after full payment stays with equity. Symmetric bilateral netting
 $L_{ij},L_{ji}\mapsto L_{ij}-L_{ji},0$ is therefore not always innocuous before
 the clearing rule is applied, especially when one of the two nodes is near
 default.
+
+\subsection{Bilateral netting is not local}
+
+This is a sharp example of the fact that clearing is global. A tempting
+preprocessing step is to choose
+\[
+  0\leq a\leq \min(L_{ij},L_{ji})
+\]
+and replace
+\[
+  L_{ij}\leftarrow L_{ij}-a,
+  \qquad
+  L_{ji}\leftarrow L_{ji}-a.
+\]
+Even if the two liabilities are between the same pair of participants, this
+operation need not preserve the clearing allocation. The reason is that the
+payment from $j$ to $i$ is part of $i$'s estate and is then shared among all of
+$i$'s creditors. Netting it bilaterally removes that payment from the estate
+before the global pari passu rule is applied.
+
+For example, take three nodes with external assets
+\[
+  x_1=0,\qquad x_2=10,\qquad x_3=0,
+\]
+and liabilities
+\[
+  L_{12}=10,\qquad L_{13}=10,\qquad L_{21}=10.
+\]
+Then
+\[
+  \barp=(20,10,0).
+\]
+Node $2$ pays in full, so node $1$ receives $10$. Node $1$ defaults and pays
+$10$ pro rata to its two creditors, giving
+\[
+  p=(10,10,0),
+  \qquad
+  \Pi_L^\top p=(10,5,5).
+\]
+Thus node $3$ receives $5$.
+
+Now net the bilateral pair $L_{12}=L_{21}=10$ before clearing. The only
+remaining liability is
+\[
+  \widetilde L_{13}=10.
+\]
+Node $1$ has no incoming payment and no external assets, so the clearing vector
+for the netted graph is
+\[
+  \widetilde p=(0,0,0),
+  \qquad
+  \Pi_{\widetilde L}^{\top}\widetilde p=(0,0,0).
+\]
+Node $3$ now receives nothing. The two systems therefore do not even agree up
+to the receipt relation
+\[
+  \Pi_L^\top p=\Pi_{\widetilde L}^{\top}\widetilde p.
+\]
+Bilateral setoff can be a valid legal or protocol rule, but if so it is part of
+the claim waterfall. It is not a harmless algebraic simplification of the
+Eisenberg--Noe clearing problem.
 
 Equivalently, define the monotone map
 \[
