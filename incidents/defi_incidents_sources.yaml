@@ -4,7 +4,8 @@
 
 meta:
   compiled: 2026-04-22
-  window: 2025-10-01 to 2026-04-22
+  last_spot_update: 2026-07-06
+  window: 2025-10-01 to 2026-07-06
   companion_file: defi_incidents_2025-10_to_2026-04.md
 
 # --- Primary incident trackers (check these first) ------------------
@@ -26,6 +27,12 @@ trackers:
     url: https://x.com/PeckShieldAlert
     notes: Real-time on-chain exploit detection. Monthly recap tweets are
       the best single monthly index. Search "PeckShield monthly <month> <year>".
+
+  - name: BlockSec Phalcon (X alerts + Phalcon Explorer)
+    url: https://x.com/Phalcon_xyz
+    explorer: https://app.blocksec.com/phalcon/explorer
+    notes: Real-time exploit alerts plus transaction traces. Good for same-day
+      root-cause hypotheses before full BlockSec postmortems are published.
 
   - name: SlowMist Hacked
     url: https://hacked.slowmist.io/
@@ -182,15 +189,33 @@ search_templates:
     - "wash-lending Morpho"
     - "looping vault dark loops"
 
+# --- Spot updates after the original April sweep ---------------------
+
+spot_updates:
+  - protocol: Summer Finance
+    date: 2026-07-06
+    amount: "~$6M"
+    incident_file: 2026-07-06_summer_finance_ark_share_manipulation.md
+    sources:
+      - https://x.com/Phalcon_xyz/status/2074019470918799737
+      - https://x.com/Phalcon_xyz/status/2074089672775725208
+      - https://app.blocksec.com/phalcon/explorer/tx/eth/0x0db528c44f23fc7fa4544684a2fab81096450a14aae8bc89f42cd0592d43da12
+    notes: BlockSec Phalcon attributed the suspected root cause to
+      donation-sensitive valuation in Summer Finance Ark integrations that
+      read downstream vault spot exchange rates via convertToAssets.
+
 # --- Gaps / things worth re-checking next time ------------------------
 
 known_gaps:
   - TelosC public postmortem on xUSD exposure (Nov 2025) — not found.
   - MakinaFi secondary reporting beyond rekt.news / coinalertnews is thin.
-  - Aperture Finance vs SwapNet breakdown: $3.67M + $13.43M = $17M combined.
+  - >-
+    Aperture Finance vs SwapNet breakdown: $3.67M + $13.43M = $17M combined.
     Some aggregators treat as one incident — disambiguate.
-  - "Morpho TVL $10B→$7B" figure commonly misattributed to Resolv; actually
+  - >-
+    "Morpho TVL $10B→$7B" figure commonly misattributed to Resolv; actually
     refers to curator-industry TVL contracting after Stream. Verify before
     citing analytically.
-  - Feb 2026 IoTeX exact day: 2026-02-21 per Crypto Times; some aggregators
+  - >-
+    Feb 2026 IoTeX exact day: 2026-02-21 per Crypto Times; some aggregators
     list different days — prefer the Crypto Times / Halborn date.
