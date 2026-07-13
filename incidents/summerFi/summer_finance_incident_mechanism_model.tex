@@ -1,0 +1,532 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+\title{From Incident Reconstruction to Mechanism Families:\\
+The Summer Finance Vault Exploit}
+\author{}
+\date{July 2026}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\begin{tabular}{ll}
+    Observed & 6 July 2026, Ethereum \\
+    Confirmed loss & approximately \$6.04 million of depositor value \\
+    Status & remediation, reconciliation, and recovery remain pending \\
+    Last reviewed & 13 July 2026
+\end{tabular}
+\end{center}
+
+\section{Introduction: From Incidents to Mechanism Families}
+
+Security incidents are often classified by a prominent implementation detail such as a flash loan, an oracle, or an ERC-4626 vault.  These labels are useful for indexing reports, but they are too coarse for understanding how attack methods evolve.  A flash loan may only finance an attack whose essential mechanism lies in accounting, market liquidity, governance, or the composition of several protocols.
+
+A more useful representation treats each incident as an ordered economic mechanism:
+\begin{equation}
+    \begin{aligned}
+        \text{precondition}
+        &\longrightarrow \text{asset acquisition}
+        \longrightarrow \text{financing} \\
+        &\longrightarrow \text{state manipulation}
+        \longrightarrow \text{liquidity activation}
+        \longrightarrow \text{extraction}.
+    \end{aligned}
+\end{equation}
+The representation should record both the state transitions executed by the attacker and the structural conditions that made those transitions profitable.
+
+For the Summer Finance incident, the mechanism fingerprint contains the following elements:
+\begin{itemize}[nosep]
+    \item an impaired downstream receipt token;
+    \item a secondary market where that token could be acquired at a deep discount;
+    \item a stale accounting value that remained much larger than realizable value;
+    \item a direct donation into an active strategy adapter;
+    \item propagation of the adapter value into a parent-vault NAV;
+    \item temporary concentration of parent-vault shares using flash liquidity;
+    \item public activation of redeemable liquidity in other strategies;
+    \item redemption against unrelated liquid assets;
+    \item incomplete offboarding and recursive vault exposure.
+\end{itemize}
+
+This fingerprint permits comparison with incidents that use different contracts but share the same economic structure.  Clustering incidents by primitive, composition, sequence, precondition, and extraction method can help identify whether an attack mode is emerging, diffusing, persisting, receding, or being displaced by a related method.
+
+Copycat attribution requires more than a shared outcome.  Temporal proximity to a disclosure, a rare sequence of calls, reused bytecode, common function selectors, similar funding paths, or replication of an unusual market route provide stronger evidence of diffusion.  Independent rediscovery should remain a separate category.
+
+Raw attack counts also need an exposure denominator.  For mechanism family $k$, a useful incidence rate is
+\begin{equation}
+    I_k(t)
+    =
+    \frac{\text{incidents using mechanism }k\text{ during }t}
+         {\text{protocols, vaults, or TVL exposed to mechanism }k\text{ during }t}.
+\end{equation}
+An increase in attacks may reflect wider adoption of the vulnerable design rather than a change in attacker preference.  A decline may reflect declining exposure rather than effective mitigation.
+
+The Summer Finance case illustrates the analytical progression used in this note.  The incident is reconstructed from protocol-specific evidence, minimised into a small vault model that preserves the essential economic mechanism, and generalised into a systematic search pattern.  Its compact family description is
+\begin{equation}
+    \boxed{
+    \text{discounted transferable claim}
+    + \text{inflated compositional valuation}
+    + \text{liquid redemption path}
+    }.
+\end{equation}
+
+\section{Incident Overview}
+
+On 6 July 2026, an attacker manipulated the net asset value of two Lazy Summer Protocol USDC vaults on Ethereum and extracted approximately \$6.04 million of depositor value in a single atomic transaction \cite{summer-postmortem}.  The affected vaults were:
+\begin{table}[h]
+    \centering
+    \begin{tabular}{lrr}
+        \toprule
+        Vault & Pre-incident TVL & Confirmed net loss \\
+        \midrule
+        Mainnet USDC Lower Risk & approximately \$9.68M & approximately \$5.64M \\
+        Mainnet USDC Higher Risk & approximately \$482K & approximately \$0.40M \\
+        \bottomrule
+    \end{tabular}
+    \caption{Affected Lazy Summer vaults.}
+\end{table}
+
+The vault contracts are:
+\begin{itemize}[nosep]
+    \item Lower Risk: \nolinkurl{0x98C49e13bf99D7CAd8069faa2A370933EC9EcF17}
+    \item Higher Risk: \nolinkurl{0xE9cDA459bED6dcfb8AC61CD8cE08E2D52370cB06}
+\end{itemize}
+Herd reports 67 configured Arks across the products.  Following their nested allocations produces more than 500 underlying positions, including repeated and correlated exposures \cite{herd-analysis}.
+
+The incident did not rely on compromised keys or a temporary oracle update.  It was a composition and offboarding failure.  Strategy adapters called Arks had allocation caps of zero but remained active and continued contributing to \texttt{FleetCommander.totalAssets()}.  A direct token transfer into an active Ark was therefore credited at the Ark's accounting value even though the transferred position had little realizable value and added no equivalent withdrawal liquidity.
+
+The attacker had accumulated impaired Silo ``Varlamore USDC Growth'' receipt tokens, commonly called \texttt{vgUSDC}, at a deep market discount.  Those tokens still reported a large ERC-4626 accounting value because stranded Silo debt continued accruing interest after the November 2025 Stream Finance collapse.  The attacker donated the stale-valued receipt tokens into a Summer Ark, inflated parent-vault NAV, and redeemed parent shares against real USDC held in other Arks and buffers.
+
+The higher-risk vault was affected through a Term Finance Ark and a recursive path into the lower-risk vault.  Herd Labs also reports that the attacker used permissionless Morpho V2 \texttt{forceDeallocate} calls to increase immediately available USDC before redemption \cite{herd-analysis}.  This step increased extraction capacity but did not create the false NAV.
+
+\section{Architecture and Confirmed Root Cause}
+
+Lazy Summer vaults are ERC-4626 vaults managed by a \texttt{FleetCommander}.  Each FleetCommander aggregates a set of Arks.  The relevant accounting path was
+\begin{equation}
+    \texttt{Ark.totalAssets()}
+    \longrightarrow
+    \texttt{FleetCommander.totalAssets()}
+    \longrightarrow
+    \text{parent share price}.
+\end{equation}
+For receipt-token Arks, the reported value included externally transferred balances through logic equivalent to
+\begin{equation}
+    \texttt{convertToAssets(balanceOf(Ark))}.
+\end{equation}
+
+The affected Arks had allocation caps of zero but had not been removed from the active set.  This state had several consequences:
+\begin{itemize}[nosep]
+    \item normal allocator deposits into the Arks were blocked;
+    \item direct token transfers into the Ark remained possible;
+    \item donated token balances remained included in Ark \texttt{totalAssets()};
+    \item Ark \texttt{totalAssets()} remained included in parent NAV;
+    \item inflated redemptions could be paid from unrelated liquid Arks.
+\end{itemize}
+
+Summer Finance rejects the early framing that the primary issue was a mismatch between \texttt{totalAssets()} and \texttt{withdrawableTotalAssets()} \cite{summer-postmortem}.  The manipulated Ark did not need to be withdrawable.  Redemptions were satisfied from the buffer and other liquid Arks, while the donated illiquid position remained in the vault.  The failure was allowing an impaired, donation-sensitive Ark to remain active and priced into NAV during offboarding.
+
+\subsection{The impaired downstream position}
+
+The receipt token used against the lower-risk vault was \texttt{vgUSDC} \cite{vgusdc-contract}.  Its contract address is:
+\begin{center}
+    \nolinkurl{0x8399C8Fc273bD165C346Af74A02e65f10e4FD78F}
+\end{center}
+Its underlying Silo market had exposure to \texttt{nbxUSD-155}, an \texttt{xUSD} wrapper affected by the Stream Finance collapse.  Borrowers had little economic reason to repay USDC debt to recover impaired \texttt{xUSD} collateral.  The position was effectively non-redeemable even as interest continued accruing in the market's accounting.
+
+Herd Labs estimates that the Silo vault's original \$32.8 million allocation had grown to a reported value of roughly \$488 million despite the USDC being stranded \cite{herd-analysis}.  The result was a large gap between reported ERC-4626 NAV, secondary-market acquisition cost, and realizable redemption value.
+
+Herd reconstructs five wallets acquiring nominally about \$7 million of \texttt{vgUSDC} exposure for roughly \$14,500 through \texttt{USDT -> xUSD -> vgUSDC} swaps in an imbalanced Balancer pool.  Summer Finance independently concludes that the wallet cluster was funded and accumulated the position over roughly three months, indicating planned pre-positioning rather than a same-block purchase \cite{summer-postmortem}.
+
+Transaction decoding shows large \texttt{vgUSDC} transfers through the attacker contract and into the Summer Silo Ark at \nolinkurl{0x61d7063041d83C8ca3E42c39181dFd14B3Bc76c2} \cite{blockscout-transaction}.  The exact token quantity is less important than the valuation gap: the position could be bought near its distressed market value while Summer credited it near the downstream vault's reported NAV.
+
+\subsection{Risk classification}
+
+The primary classification is smart-contract and vault-accounting design.  Related classifications are valuation and oracle-equivalent failure, liquidity and redemption-path composition, operational offboarding failure, governance and role fragmentation, and recursive vault exposure.  Calling the event an oracle-equivalent failure does not imply a faulty Chainlink feed.  The parent treated a child vault's accounting NAV as robust economic value after its market price and realizable redemption value had collapsed.
+
+\section{Reconstructed Attack}
+
+The attack transaction interleaved calls across both vaults.  The grouping below follows the economic effect rather than the exact call order.
+
+\subsection{Lower-risk vault}
+
+\begin{enumerate}[nosep]
+    \item The attacker borrowed approximately 65.4 million USDC plus 1 million USDT through flash liquidity.
+    \item Approximately 64.8 million USDC was deposited into the lower-risk vault at a pre-manipulation share price near 1.0665 USDC.
+    \item The deposit gave the attacker roughly 86.4\% of the post-deposit share supply.
+    \item Stale-valued \texttt{vgUSDC} was transferred directly into the Silo Ark.  No corresponding parent-vault shares were minted.
+    \item The donation increased reported NAV by roughly 9.5\%, moving the share price near 1.1678 USDC without adding comparable withdrawable value.
+    \item The attacker redeemed against the inflated NAV.  Payment came from the buffer and liquid Morpho, Spark, and Sky Arks, not from the impaired Silo position.
+    \item The lower-risk vault incurred approximately \$5.64 million of net loss.
+\end{enumerate}
+
+\subsection{Higher-risk vault and recursive exposure}
+
+The higher-risk vault did not directly hold the Silo Ark.  Its exposure arose through a Term Finance receipt token, \texttt{tsvSummerfiUSDC}, held by an ERC-4626 Ark.  The Term strategy itself routed capital into the lower-risk vault.
+
+The transaction began with a deposit and withdrawal round trip that moved about \$398,000 of liquidity into the higher-risk buffer.  A deposit into the Term strategy minted \texttt{tsvSummerfiUSDC} while routing underlying USDC into the lower-risk vault.  Herd estimates this leg at roughly \$490,000.  The routed USDC was recovered during the larger lower-risk redemption.  The attacker then donated the Term receipt tokens into the higher-risk Term Ark and redeemed higher-risk shares against the resulting accounting value.  Across the transaction, approximately 29.517 million USDC was deposited into the higher-risk vault and approximately 29.916 million USDC was redeemed, producing an estimated \$399,000 loss \cite{ba-retrospective,herd-analysis}.
+
+The recursive path matters because the vault labels suggested distinct risk products, while the higher-risk vault held a token whose strategy allocated into the lower-risk vault.  Manipulation could therefore propagate without a direct allocation from the higher-risk product to the original impaired asset.
+
+\subsection{Morpho V2 liquidity amplification}
+
+Morpho V2 vaults expose a permissionless \texttt{forceDeallocate} function.  A caller can pay a fee denominated in vault shares to move assets from an adapter or market into the Morpho vault's idle liquidity.  Some relevant vaults reportedly had a zero fee.
+
+Herd reports that the attacker made minimal deposits where shares were required, called \texttt{forceDeallocate} across four Morpho vaults, and moved substantial USDC into immediately redeemable idle balances \cite{herd-analysis}.  The lower-risk vault's accessible liquidity reportedly increased from roughly \$1.6 million to about \$5.64 million.
+
+This operation did not transfer funds directly to the attacker.  It made USDC available inside downstream Morpho vaults so that Summer Arks could pull it during redemption.  Morpho core was not exploited and did not suffer bad debt in the transaction.  Its liquidity-control feature was composed with Summer's inflated redemption path.
+
+\section{Offboarding, Permissions, and Response}
+
+The SiloV2 Ark cap had been set to zero on 30 October 2025, and the Term Finance Ark cap had been set to zero on 6 November 2025.  Block Analitica states that its \texttt{CURATOR\_ROLE} could set exposure parameters and deposit caps but could not remove Arks, alter NAV accounting, freeze withdrawals, or change protocol implementation.  Ark removal required governance \cite{ba-retrospective}.
+
+The removal rules required an Ark to have a zero cap and hold no assets before \texttt{removeArk} could complete.  This produced an intermediate state in which an Ark was closed to allocator inflows but remained active, donation-sensitive, and included in NAV.  In this case the state persisted for about eight months.
+
+The exploit did not use administrator privileges.  The Guardian Module was a 6-of-8 multisig with authority to pause vaults, set deposit caps to zero, and cancel governance proposals.  It could not move user funds.  A separate Foundation multisig executed the later sweep of donated \texttt{vgUSDC} from the lower-risk vault.  Herd identifies the Foundation Safe as a 3-of-5 multisig and notes that the response transaction could obtain the permissions needed to move the impaired position without a timelock \cite{herd-analysis,guardian-report}.
+
+Response actions included setting affected and broader fleet deposit caps to zero; pausing vaults across Ethereum, Base, Arbitrum, and Sonic; engaging SEAL 911 and tracing providers; contacting the exploiter and exchanges; and sweeping the donated position to stop continuing NAV distortion \cite{sweep-transaction}.  HyperEVM required escalation to the Foundation because the Guardian role was missing there.  The sweep also crystallised the loss for remaining depositors.
+
+Summer Finance reports that approximately \$6.04 million was extracted as DAI.  A portion was later routed through Tornado Cash using an intermediary address.  At the time of the official postmortem, roughly \$4 million of capital remained in the affected vaults, much of it illiquid.  Depositor reconciliation, exclusion of attacker-held shares from snapshots, compensation, distribution of remaining assets, and the reopening of unaffected vaults remained governance questions \cite{summer-postmortem}.
+
+Herd estimates that most of the lower-risk loss fell on a large depositor whose initial position was approximately \$7.8 million and was worth about \$3.13 million after the sweep.  Summer Finance had not yet published final per-user reconciliation, so this remains a third-party estimate \cite{herd-analysis}.
+
+\section{Minimising the Incident}
+
+The protocol-specific reconstruction can be reduced to a parent vault, an adapter, a downstream vault, and an external market:
+\begin{equation}
+    V_1\text{ USDC}
+    \longrightarrow \text{adapter}
+    \longrightarrow V_2
+    \longrightarrow V_2\text{ shares held by the adapter}.
+\end{equation}
+The parent vault $V_1$ accepts USDC and issues shares.  It keeps some USDC in a liquid buffer and exchanges some USDC for shares of the downstream vault $V_2$.  The adapter holds those downstream shares and reports their value back to $V_1$.
+
+If the adapter sends $y$ USDC to $V_2$ when the downstream share price is $p_2$, then $V_2$ mints
+\begin{equation}
+    q_0=\frac{y}{p_2}
+\end{equation}
+shares to the adapter.  Economically, $V_1$ has exchanged USDC for a claim on the downstream portfolio.
+
+The minimal mechanism requires:
+\begin{itemize}[nosep]
+    \item inclusion of the adapter's downstream-share balance in parent NAV;
+    \item acceptance of direct transfers without proportional parent-share issuance;
+    \item a large difference between reported and realizable downstream-share value;
+    \item a channel for acquiring the downstream shares cheaply;
+    \item temporary concentration of parent-vault shares;
+    \item enough liquid parent assets to satisfy redemption at the manipulated price.
+\end{itemize}
+
+In this reduction, a Summer Ark is an adapter, \texttt{vgUSDC} is a distressed downstream receipt token, the Balancer pool is the acquisition market, and Morpho \texttt{forceDeallocate} increases the liquid assets available for exit.  The donated claim creates false NAV, while the buffer and liquid strategies provide the real assets extracted by the attacker.
+
+\section{Minimal Formal Model}
+
+\subsection{Vault structure and valuation}
+
+Let $S_0$ be the initial supply of parent-vault shares, $B_0$ its liquid USDC balance, and $A_0$ the USDC value reported for its invested portfolio.  The parent initially reports
+\begin{equation}
+    V_0=B_0+A_0,
+    \qquad
+    p_0=\frac{V_0}{S_0}.
+\end{equation}
+
+Suppose the attacker owns $q$ shares of $V_2$.  The adapter assigns a reported value $v$ per downstream share.  The same shares can be acquired externally for $c$ per share and realise only $r$ per share through redemption or sale, with
+\begin{equation}
+    r\simeq c\ll v.
+\end{equation}
+The quantity $vq$ is book value, $rq$ is realizable value, and $cq$ is the attacker's acquisition cost.
+
+An adapter allocation cap of zero blocks investments made through the parent allocator.  In the vulnerable design it does not block a direct transfer of $V_2$ shares to the adapter and does not remove the adapter from $V_1$ accounting.
+
+\subsection{Attack as state transitions}
+
+The acquisition of $V_2$ shares may occur before the atomic transaction.  The other transitions can be executed atomically.
+
+\begin{enumerate}
+    \item \textbf{Acquire the distressed downstream shares.}
+
+    The attacker buys $q$ shares of $V_2$ on an external market at cost $cq$.  The adapter will later recognise them at the much larger value $vq$.
+
+    \item \textbf{Obtain temporary financing.}
+
+    The attacker borrows $F$ units of the base asset.  The principal and financing fees must be repaid before the transaction ends.
+
+    \item \textbf{Deposit into the parent vault.}
+
+    The attacker deposits $F$ into $V_1$ at price $p_0$ and receives
+    \begin{equation}
+        x=\frac{F}{p_0}
+    \end{equation}
+    parent shares.  The state changes to $V_0+F$ assets and $S_0+x$ shares.  The share price is unchanged because
+    \begin{equation}
+        \frac{V_0+F}{S_0+x}=p_0.
+    \end{equation}
+    The attacker owns the fraction
+    \begin{equation}
+        \alpha(F)=\frac{x}{S_0+x}=\frac{F}{V_0+F}
+    \end{equation}
+    of the post-deposit supply.
+
+    \item \textbf{Release liquid assets if required.}
+
+    Let $L_0$ be liquid assets available before the attack, excluding $F$.  Public withdrawals or deallocation functions may move $\Delta L$ from invested strategies into withdrawable assets:
+    \begin{equation}
+        L_0+F\longrightarrow L_0+F+\Delta L.
+    \end{equation}
+    This changes liquidity composition without creating false NAV.
+
+    \item \textbf{Donate the downstream shares.}
+
+    The attacker transfers the $q$ shares directly to the adapter:
+    \begin{equation}
+        \operatorname{transfer}(\text{attacker},\text{adapter},q).
+    \end{equation}
+    No $V_1$ shares are minted.  The parent nevertheless recognises the reported donation value
+    \begin{equation}
+        D=vq.
+    \end{equation}
+
+    \item \textbf{Reprice the parent vault.}
+
+    The parent reports
+    \begin{equation}
+        V_{\mathrm{reported}}=V_0+F+D
+    \end{equation}
+    and a manipulated share price
+    \begin{equation}
+        p_1=\frac{V_0+F+D}{S_0+x}
+           =p_0+\frac{D}{S_0+x}.
+    \end{equation}
+    Economically, the donated position contributes only about $rq$ of realizable value.
+
+    \item \textbf{Redeem the attacker shares.}
+
+    Burning all $x$ parent shares produces the accounting claim
+    \begin{equation}
+        R=xp_1=F+\alpha D.
+    \end{equation}
+    The payout comes from the parent buffer and other liquid strategies.  Full redemption is possible when
+    \begin{equation}
+        \alpha D\leq L_0+\Delta L.
+    \end{equation}
+
+    \item \textbf{Repay temporary financing.}
+
+    After repaying $F$, approximate net profit is
+    \begin{equation}
+        \Pi=\alpha vq-cq-\text{fees}.
+    \end{equation}
+
+    \item \textbf{Leave the impaired claim with depositors.}
+
+    The donated $V_2$ shares remain in the adapter while liquid base assets have left $V_1$.  When the claim is swept, removed, or marked down from $v$ to $r$, the false value disappears and the depositor loss becomes visible in the parent share price.
+\end{enumerate}
+
+\subsection{Secondary-market acquisition}
+
+The attack requires a way to obtain downstream shares for less than the value assigned by the parent.  A secondary market is the clearest channel, although an OTC transfer, liquidation, or other distribution can serve the same role.
+
+ERC-4626 shares implement ERC-20 and are transferable unless the vault deliberately makes transfers revert \cite{erc4626}.  Transferability makes a market possible but does not guarantee an economically meaningful market.
+
+Let $P_M(z)$ be the marginal secondary-market price after the attacker has purchased $z$ shares.  Acquiring $q$ shares costs
+\begin{equation}
+    C_M(q)=\int_0^q P_M(z)\,dz.
+\end{equation}
+The fixed-price term $cq$ is the special case $P_M(z)=c$.  The profit expression becomes
+\begin{equation}
+    \Pi(q,F)
+    =\alpha(F)vq-C_M(q)-\text{fees}.
+\end{equation}
+
+The attack has separate acquisition and redemption constraints.  A sufficient quantity must be available at low total cost, and the parent must expose enough liquid value:
+\begin{equation}
+    q\leq Q_M,
+    \qquad
+    \alpha(F)vq\leq L_0+\Delta L.
+\end{equation}
+
+Secondary markets are likely to matter when direct redemption is delayed, queued, capped, paused, costly, or exposed to unrecognised bad debt.  ERC-7540 formalises asynchronous vault requests for systems in which atomic entry or exit is unavailable \cite{erc7540}.  Vault shares may also trade because they are used as collateral, composable yield assets, or targets of liquidity incentives.
+
+The dangerous market need not have conventional depth.  A thin and imbalanced pool may hold a large inventory of unwanted receipt tokens at a severe discount.  The relevant quantity is the executable cost $C_M(q)$, not the quoted price of a small trade or nominal pool TVL.
+
+\subsection{Recursive extension}
+
+Suppose another parent vault holds a receipt token whose strategy deposits into $V_1$.  If that token is donated into an active adapter and valued through its accounting NAV, the same mechanism applies again:
+\begin{equation}
+    \text{parent vault}
+    \longrightarrow \text{wrapper token}
+    \longrightarrow V_1
+    \longrightarrow \text{impaired adapter}.
+\end{equation}
+This structure allows a valuation distortion to propagate across vault products without a direct allocation from every parent to the original impaired asset.
+
+\section{Generalising the Blueprint}
+
+The minimal model produces a general risk pattern:
+\begin{equation}
+    \boxed{
+    \begin{gathered}
+    \text{cheap transferable child shares}
+    +\text{ inflated parent valuation}\\
+    +\text{ donation-sensitive accounting}
+    +\text{ temporary share concentration}\\
+    +\text{ accessible parent liquidity}
+    \end{gathered}}
+\end{equation}
+
+Feasibility depends on several constraints:
+\begin{itemize}[nosep]
+    \item \textbf{Acquisition:} child shares can be acquired at a total cost substantially below the parent's recognised value.
+    \item \textbf{Entry:} the attacker can deposit enough into the parent to make $\alpha(F)$ large.
+    \item \textbf{Accounting:} donated shares enter parent \texttt{totalAssets()} without proportional parent-share issuance.
+    \item \textbf{Redemption:} the parent has enough liquid assets, including publicly releasable liquidity, to satisfy the inflated claim.
+    \item \textbf{Dependency:} the child claim and its true redemption rules can be resolved through every wrapper level.
+\end{itemize}
+
+\subsection{Systematic search procedure}
+
+A screening program can implement the following procedure:
+\begin{enumerate}[nosep]
+    \item Build a universe of user-facing vaults and enumerate every active adapter, including adapters with zero allocation caps.
+    \item Resolve each adapter into the receipt tokens and downstream vaults it holds.
+    \item Test whether each receipt token is transferable and whether direct transfers change adapter or parent \texttt{totalAssets()}.
+    \item Locate DEX pools, OTC venues, liquidation routes, and other sources from which the receipt token can be acquired.
+    \item Estimate the executable acquisition-cost curve $C_M(q)$.
+    \item Compare $C_M(q)$ with the value $vq$ recognised by the parent.
+    \item Measure parent deposit capacity and the ownership fraction achievable with available temporary financing.
+    \item Measure liquid assets available for redemption, including public deallocation and forced-withdrawal functions.
+    \item Search recursively for vault shares held by other vaults and correlated allocations into the same downstream positions.
+    \item Flag configurations for which estimated profit is positive under realistic acquisition, deposit, and redemption constraints.
+\end{enumerate}
+
+There is no authoritative public count of vault shares with meaningful secondary markets.  Counting pool contracts is insufficient because many contain only dust, while a distressed and imbalanced pool may be economically important.  The relevant prevalence measure is the number of vault-share tokens for which a material quantity can be acquired at an executable cost substantially below the value recognised by a parent vault.
+
+\section{Clustering, Diffusion, and Copycat Analysis}
+
+Each incident can be stored as both a feature vector and a directed mechanism graph.  Useful feature groups include:
+\begin{itemize}[nosep]
+    \item target layer and contract family;
+    \item structural preconditions;
+    \item acquisition channel and market state;
+    \item financing method;
+    \item valuation or accounting manipulation;
+    \item liquidity activation;
+    \item extraction method;
+    \item governance or operational delay;
+    \item remediation and recovery outcome.
+\end{itemize}
+
+Similarity should give more weight to rare causal features than to common implementation details.  Weighted set similarity can compare incident features, while graph-edit or sequence distance can compare ordered mechanisms.  Clusters can be maintained at different resolutions, from primitive operations such as donations to composed sequences such as discounted acquisition, donation-sensitive NAV, and redemption from unrelated liquidity.
+
+A diffusion study should record the exploit date, the beginning of any pre-positioning, the first disclosure date, publication of technical details, implementation of mitigations, and subsequent related incidents.  A candidate copycat should be assessed using temporal proximity, code and transaction similarity, repeated market routes, shared infrastructure, and whether the later attacker could plausibly have learned from the earlier disclosure.
+
+Mechanism prevalence should be normalised by exposed protocol count, exposed TVL, or another relevant denominator.  This permits a distinction between a method becoming more popular among attackers and a vulnerable architecture becoming more common among protocols.
+
+The resulting dataset can support mechanism-family timelines, nearest-neighbour searches, transition matrices, mitigation survival analysis, and alerts when a newly disclosed sequence matches configurations that remain deployed elsewhere.
+
+\section{Design Lessons and Open Questions}
+
+The Summer Finance case suggests the following controls and research questions:
+\begin{itemize}
+    \item An allocation cap of zero must not be treated as complete offboarding.
+    \item Direct token transfers must not create redeemable NAV unless the asset is valued conservatively and is economically realizable.
+    \item Parent vaults need explicit valuation rules for distressed, paused, queued, or non-redeemable child-vault shares.
+    \item NAV, market value, and liquidative value should be tracked separately.
+    \item Recursive vault exposure should be visible across every wrapper and adapter level.
+    \item Public deallocation functions should be modelled as controls over redemption capacity.
+    \item Curator, guardian, governor, and foundation responsibilities need explicit transition ownership and deadlines.
+    \item Monitoring should flag active adapters with zero caps, direct donations, unexpected balance growth, distressed receipt tokens, and gaps between accounting NAV and executable value.
+    \item Contract-level audits should be supplemented by economic testing across otherwise valid integrations.
+    \item The prevalence of secondary markets for vault shares should be measured using executable acquisition costs rather than pool counts.
+    \item Incident datasets should encode ordered economic mechanisms so that diffusion and copycat hypotheses can be tested.
+\end{itemize}
+
+\section{Open Verification Checks}
+
+The following items remain useful for follow-up research:
+\begin{itemize}
+    \item independently reproduce the four \texttt{forceDeallocate} calls and quantify the liquidity released by each Morpho vault;
+    \item reconcile the approximate \$14,500 acquisition-cost estimate with the full attacker-wallet cluster and the pre-positioning timeline;
+    \item track the final depositor snapshot, remaining-asset distribution, compensation decision, and reopening plan;
+    \item confirm the amount routed through Tornado Cash and any funds frozen or recovered elsewhere;
+    \item review implemented protections for donations, active-Ark NAV, and time-bounded offboarding before vaults reopen;
+    \item identify other Lazy Summer or third-party vaults with capped but active integrations that hold transferable receipt tokens;
+    \item measure how many transferable vault-share tokens have enough discounted external inventory to support a profitable donation under realistic slippage.
+\end{itemize}
+
+\section{Source Assessment}
+
+The primary sources agree that stale-valued tokens were donated into capped but active Arks, inflated FleetCommander NAV, and enabled redemption against other depositors' liquid USDC.  They differ in emphasis.  Summer Finance describes incomplete offboarding as the principal failure.  Block Analitica emphasises that caps had been zero for months and that only governance could remove the Arks.  Phalcon focuses on donation-sensitive adapter valuation and Morpho deallocation mechanics.  Herd focuses on dependency complexity, recursive exposure, public liquidity activation, and cleanup permissions.
+
+Herd also sells dependency-analysis tooling, so its broader conclusions about graph monitoring have a commercial context.  Its transaction-level claims remain independently checkable onchain.  The statement that there was no code bug should be read narrowly: the contracts behaved as implemented, but accepting externally transferred impaired assets into active NAV and allowing inflated redemption was still a protocol-design vulnerability.
+
+\begin{thebibliography}{99}
+
+\bibitem{summer-postmortem}
+Summer Finance, ``Lazy Summer USDC Vault Exploit Post-Mortem: What Happened and What Comes Next,'' 7 July 2026.\\
+\href{https://blog.summer.fi/lazy-summer-usdc-vault-exploit-post-mortem-what-happened-and-what-comes-next/}{Summer Finance postmortem}
+
+\bibitem{summer-technical}
+Summer Finance technical postmortem.\\
+\href{https://gist.github.com/halaprix/52bd5e32b35be100dc40ba30539e4169}{Technical postmortem}
+
+\bibitem{ba-retrospective}
+Block Analitica, ``Lazy Summer Protocol Exploit, July 6 2026: BA Labs Risk Curator Retrospective,'' 8 July 2026.\\
+\href{https://forum.summer.fi/t/lazy-summer-protocol-exploit-july-6-2026-ba-labs-risk-curator-retrospective/856}{BA Labs retrospective}
+
+\bibitem{herd-analysis}
+Herd Labs, ``The Dangers of Modern Vault Design: What Summer Finance/Block Analitica's \$6m Loss Teaches Us,'' 8 July 2026.\\
+\href{https://paragraph.com/@herd-labs/the-dangers-of-modern-vault-design-what-summer-financeblock-analiticas-dollar6m-loss-teaches-us}{Herd Labs analysis}
+
+\bibitem{herd-report}
+Herd Labs transaction report.\\
+\href{https://herd.eco/doubleclick/forum/019f426e-a452-7000-9770-f21cca833567}{Transaction report}
+
+\bibitem{guardian-report}
+Lazy Summer, ``Guardian Multisig Transparency Reporting Thread.''\\
+\href{https://forum.summer.fi/t/guardian-multisig-transparency-reporting-thread/787/5}{Guardian multisig report}
+
+\bibitem{phalcon-initial}
+BlockSec Phalcon initial alert.\\
+\href{https://x.com/Phalcon_xyz/status/2074019470918799737}{Initial alert}
+
+\bibitem{phalcon-followup}
+BlockSec Phalcon follow-up analysis.\\
+\href{https://x.com/Phalcon_xyz/status/2074089672775725208}{Follow-up analysis}
+
+\bibitem{exploit-transaction}
+Ethereum exploit transaction.\\
+\href{https://etherscan.io/tx/0x0db528c44f23fc7fa4544684a2fab81096450a14aae8bc89f42cd0592d43da12}{Etherscan transaction}
+
+\bibitem{phalcon-explorer}
+BlockSec Phalcon transaction explorer.\\
+\href{https://app.blocksec.com/phalcon/explorer/tx/eth/0x0db528c44f23fc7fa4544684a2fab81096450a14aae8bc89f42cd0592d43da12}{Phalcon transaction}
+
+\bibitem{blockscout-transaction}
+Blockscout transaction decoding.\\
+\href{https://eth.blockscout.com/tx/0x0db528c44f23fc7fa4544684a2fab81096450a14aae8bc89f42cd0592d43da12}{Blockscout transaction}
+
+\bibitem{vgusdc-contract}
+The \texttt{vgUSDC} token contract.\\
+\href{https://eth.blockscout.com/address/0x8399C8Fc273bD165C346Af74A02e65f10e4FD78F}{Blockscout contract page}
+
+\bibitem{sweep-transaction}
+Lazy Summer Foundation sweep transaction.\\
+\href{https://etherscan.io/tx/0x7bead580b8d610e56949fb4162384e6e31dec24ad3b4668d8f4bddc345f14fd4}{Etherscan transaction}
+
+\bibitem{erc4626}
+Ethereum Improvement Proposal 4626, ``Tokenized Vaults.''\\
+\href{https://eips.ethereum.org/EIPS/eip-4626}{EIP-4626}
+
+\bibitem{erc7540}
+Ethereum Improvement Proposal 7540, ``Asynchronous ERC-4626 Tokenized Vaults.''\\
+\href{https://eips.ethereum.org/EIPS/eip-7540}{EIP-7540}
+
+\end{thebibliography}
+
+\end{document}

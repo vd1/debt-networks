@@ -195,7 +195,7 @@ spot_updates:
   - protocol: Summer Finance
     date: 2026-07-06
     amount: "~$6M"
-    incident_file: 2026-07-06_summer_finance_ark_share_manipulation.md
+    incident_file: summerFi/summer_finance_incident_mechanism_model.tex
     sources:
       - https://x.com/Phalcon_xyz/status/2074019470918799737
       - https://x.com/Phalcon_xyz/status/2074089672775725208
