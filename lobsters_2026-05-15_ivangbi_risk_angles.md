@@ -96,7 +96,7 @@ b) What are the services today that review these things? DeFiscan for (5), DeFi 
   Noting defiscan also covers (4) to an extent :)  #(5) in my experience is difficult to grasp as "legal" is really an overarching category and probably needs to be narrowed down more (eg user legal rights vs regulatory risk affecting a user vs x-jurisdictional, etc.), but would be interested if someone is aware of tools/services tracking/working on this (I'm sure more will be popping in the future as we get more dense regulatory requirements through Clarity and the like).
 
   **Lmk61_102** · #574154 · 2026-05-15 15:45:58 UTC
-  I’d also like to evaluate the friction involved in entering and exiting the DeFi position — specifically bridge fees, deposit/withdrawal fees, redemption/lock-up periods, and opportunity cost. This will be an important input in my overall risk/reward evaluation. From my knowledge there is no tools for that.
+  I’d also like to evaluate the friction involved in entering and exiting the DeFi position - specifically bridge fees, deposit/withdrawal fees, redemption/lock-up periods, and opportunity cost. This will be an important input in my overall risk/reward evaluation. From my knowledge there is no tools for that.
 
   **andrew_core3** · #574155 · 2026-05-15 16:04:51 UTC
   Fair point, It would have been complete chaos if anyone on the team submitted the information without proper validation. This process is in place and is super critical

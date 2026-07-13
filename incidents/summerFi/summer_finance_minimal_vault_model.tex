@@ -1,0 +1,170 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{microtype}
+
+\title{A Minimal Model of Donation-Sensitive Vault Accounting}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Vault Structure and Valuation}
+
+Consider a user-facing ERC-4626 parent vault $V_1$.  Users deposit a base asset such as USDC and receive shares of $V_1$.  To build its portfolio, $V_1$ keeps some USDC in a liquid buffer and sends some USDC through a strategy adapter, called an Ark, to a downstream vault $V_2$:
+\begin{equation}
+    V_1\text{ USDC}
+    \longrightarrow \text{Ark}
+    \longrightarrow V_2
+    \longrightarrow V_2\text{ shares held by the Ark}.
+\end{equation}
+If the Ark sends $y$ USDC to $V_2$ when the downstream share price is $p_2$, then $V_2$ mints
+\begin{equation}
+    q_0 = \frac{y}{p_2}
+\end{equation}
+receipt shares to the Ark.  Economically, $V_1$ has exchanged $y$ USDC for a claim on $V_2$'s portfolio.  The Ark holds that claim for $V_1$, and its reported USDC value becomes part of $V_1$'s portfolio accounting.
+
+Let $S_0$ be the initial supply of $V_1$ shares, $B_0$ its liquid base-asset balance, and $A_0$ the base-asset value reported for its invested portfolio.  For a USDC vault, these quantities are denominated in USDC and can be interpreted approximately as dollar values.  The parent initially reports
+\begin{equation}
+    V_0 = B_0 + A_0,
+    \qquad
+    p_0 = \frac{V_0}{S_0},
+\end{equation}
+where $p_0$ is the price of a $V_1$ share.
+
+Suppose the attacker owns $q$ shares of $V_2$.  The Ark's accounting rule assigns a reported value $v$ per downstream share.  The same shares can be acquired externally for $c$ per share and realize only $r$ per share through redemption or sale, with
+\begin{equation}
+    r \simeq c \ll v.
+\end{equation}
+The quantity $vq$ is therefore book value, while $rq$ is realizable value and $cq$ is the attacker's acquisition cost.
+
+An Ark allocation cap of zero blocks investments made through the parent allocator.  In the vulnerable design it does not block a direct transfer of $V_2$ shares to the Ark, and it does not remove the Ark from $V_1$'s accounting.  Donated shares are consequently included in parent-vault NAV.
+
+\section{Attack as State Transitions}
+
+The external acquisition of $V_2$ shares may occur well before the atomic transaction.  The remaining transitions can be executed within a single transaction.
+
+\begin{enumerate}
+    \item \textbf{Acquire the distressed downstream shares.}
+
+    The attacker purchases $q$ shares of $V_2$ on an external market at total cost $cq$:
+    \begin{equation}
+        \text{attacker base assets} \longrightarrow cq,
+        \qquad
+        \text{attacker }V_2\text{ shares} \longrightarrow q.
+    \end{equation}
+    The Ark will later recognize these shares at the much larger value $vq$.
+
+    \item \textbf{Obtain temporary financing.}
+
+    The attacker borrows $F$ units of the base asset, for example through a flash loan.  The amount $F$ and financing fees must be repaid before the atomic transaction ends.
+
+    \item \textbf{Deposit into the parent vault.}
+
+    The attacker deposits $F$ into $V_1$ at price $p_0$ and receives
+    \begin{equation}
+        x = \frac{F}{p_0}
+    \end{equation}
+    parent-vault shares.  The state changes to
+    \begin{equation}
+        V_0 \longrightarrow V_0+F,
+        \qquad
+        S_0 \longrightarrow S_0+x.
+    \end{equation}
+    The deposit does not change the share price because
+    \begin{equation}
+        \frac{V_0+F}{S_0+x}=p_0.
+    \end{equation}
+    The attacker now owns the fraction
+    \begin{equation}
+        \alpha = \frac{x}{S_0+x}
+               = \frac{F}{V_0+F}
+    \end{equation}
+    of the post-deposit share supply.
+
+    \item \textbf{Release liquid assets if required.}
+
+    Let $L_0$ be liquid assets available before the attack, excluding $F$.  If this amount is insufficient for the intended redemption, the attacker uses public withdrawals or deallocation functions to move $\Delta L$ from invested strategies into withdrawable base assets:
+    \begin{equation}
+        L_0+F \longrightarrow L_0+F+\Delta L.
+    \end{equation}
+    This operation changes liquidity composition without creating the false NAV.  In the Summer Finance transaction, permissionless Morpho V2 deallocation reportedly served this role.
+
+    \item \textbf{Donate the downstream shares to the Ark.}
+
+    The attacker transfers the $q$ shares of $V_2$ directly to the Ark contract.  This is an ERC-20 transfer rather than a normal deposit into $V_1$ or $V_2$:
+    \begin{equation}
+        \operatorname{transfer}
+        \bigl(\text{attacker},\text{Ark},q\bigr).
+    \end{equation}
+    No $V_1$ shares are minted for this transfer.  The Ark's balance nevertheless increases by $q$, so the parent recognizes the reported donation value
+    \begin{equation}
+        D = vq.
+    \end{equation}
+
+    \item \textbf{Reprice the parent vault.}
+
+    The parent now reports
+    \begin{equation}
+        V_{\mathrm{reported}} = V_0+F+D
+    \end{equation}
+    and a manipulated share price
+    \begin{equation}
+        p_1 = \frac{V_0+F+D}{S_0+x}
+            = p_0 + \frac{D}{S_0+x}.
+    \end{equation}
+    Economically, the donated position contributes only about $rq$ of realizable value, not $vq$.
+
+    \item \textbf{Redeem the attacker shares.}
+
+    The attacker burns all $x$ shares of $V_1$ at the inflated price.  The resulting accounting claim is
+    \begin{equation}
+        R = xp_1 = F+\alpha D.
+    \end{equation}
+    The payout is assembled from the parent buffer and other liquid strategies.  It does not need to come from the donated $V_2$ position.  Full redemption is possible when
+    \begin{equation}
+        F+\alpha D \leq F+L_0+\Delta L,
+    \end{equation}
+    or equivalently
+    \begin{equation}
+        \alpha D \leq L_0+\Delta L.
+    \end{equation}
+
+    \item \textbf{Repay the temporary financing.}
+
+    After returning $F$ and paying fees, the attacker's net profit is approximately
+    \begin{equation}
+        \Pi = \alpha vq-cq-\text{fees}.
+    \end{equation}
+    The attack is profitable when
+    \begin{equation}
+        \alpha v > c + \frac{\text{fees}}{q}.
+    \end{equation}
+
+    \item \textbf{Leave the impaired position with remaining depositors.}
+
+    The donated $V_2$ shares remain in the Ark while liquid base assets have left $V_1$.  The remaining shareholders hold fewer liquid assets and a distressed downstream claim still carried at book value.  When the Ark is swept, removed, or marked down from $v$ to $r$, the false value disappears and the depositor loss becomes visible in the $V_1$ share price.
+\end{enumerate}
+
+The donation determines the inflated accounting claim.  Available liquidity determines the amount of depositor value that can be extracted against that claim.
+
+\section{Recursive Extension}
+
+Suppose a second vault holds a receipt token whose strategy deposits into the first vault.  If that receipt token is donated into an active Ark of the second vault and valued through its accounting NAV, the same mechanism applies again.  The two user-facing vaults may appear separate while remaining economically connected through a wrapper path:
+\begin{equation}
+    \text{Vault 2}
+    \longrightarrow \text{wrapper token}
+    \longrightarrow \text{Vault 1}
+    \longrightarrow \text{impaired Ark}.
+\end{equation}
+This extension explains how a valuation distortion can propagate across vault products without a direct allocation from the second vault to the original impaired asset.
+
+\section{Failure Conditions and Controls}
+
+The minimal attack requires an active Ark that accepts direct transfers, a material gap between accounting and realizable value, temporary ownership of a large fraction of parent shares, and enough liquid assets elsewhere to satisfy the inflated redemption.
+
+The model suggests several controls.  Setting an allocation cap to zero should begin a bounded offboarding process rather than leave the Ark indefinitely active.  Donations should not increase redeemable NAV at an unverified book value.  Distressed child-vault shares should be marked using realizable value or excluded from normal redemption accounting during resolution.  Finally, dependency monitoring should expose recursive wrappers and distinguish reported NAV from immediately realizable liquidity.
+
+\end{document}
