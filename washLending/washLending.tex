@@ -3,6 +3,8 @@
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
 \usepackage{amsmath,amssymb,amsthm,booktabs,graphicx,microtype}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
 \newtheorem{proposition}{Proposition}
 \newtheorem{corollary}[proposition]{Corollary}
 \usepackage[margin=1in]{geometry}
@@ -137,7 +139,30 @@ Transactions occur before income accrues, with initial share NAV
 normalized to $1S$. All shares minted by a looping borrower are also
 pledged as collateral. The final position can be reached in successive
 borrow, deposit and pledge steps, subject to liquidity and collateral
-limits at every step.
+limits at every step. Figure~\ref{fig:flows} shows the flows between
+the three parties.
+
+\begin{figure}[htbp]
+ \centering
+ \begin{tikzpicture}[
+   box/.style={draw,rounded corners,minimum width=3cm,minimum height=1.3cm,align=center},
+   flow/.style={-{Latex[length=2.5mm]},thick},
+   lab/.style={sloped,font=\small,inner sep=3pt}]
+  \node[box] (V) at (0,4.2) {$V$\\[-1pt]\footnotesize vault: accepts $S$, issues $X$};
+  \node[box] (U) at (-4.6,0) {$U$\\[-1pt]\footnotesize user};
+  \node[box] (M) at (4.6,0) {$\mathcal M$\\[-1pt]\footnotesize $X/S$ market};
+  \draw[flow] (U) to[bend left=15] node[lab,above] {deposits $S^1,S^2$} (V);
+  \draw[flow] (V) to[bend left=15] node[lab,below] {shares $X^1,X^2$} (U);
+  \draw[flow] (V) to node[lab,above] {lending $S^1$} (M);
+  \draw[flow] (U) to[bend right=15] node[lab,below] {deposit shares $X^1$} (M);
+  \draw[flow] (M) to[bend right=15] node[lab,above] {borrow $S^2$} (U);
+ \end{tikzpicture}
+ \caption{Flows in the motivating example. The user $U$ deposits $S^1$
+ and $S^2$ into the vault $V$ and receives shares $X^1$ and $X^2$. The
+ vault lends $S^1$ to the market $\mathcal M$; the user pledges $X^1$
+ there and borrows $S^2$, which is redeposited in $V$.}
+ \label{fig:flows}
+\end{figure}
 
 \subsection{Initial deposits}
 $P_1$ and $P_2$ each deposit $100S$ and receive $100X$. The vault holds
