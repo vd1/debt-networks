@@ -150,17 +150,16 @@ the three parties.
    lab/.style={sloped,font=\small,inner sep=3pt}]
   \node[box] (V) at (0,4.2) {$V$\\[-1pt]\footnotesize vault: accepts $S$, issues $X$};
   \node[box] (U) at (-4.6,0) {$U$\\[-1pt]\footnotesize user};
-  \node[box] (M) at (4.6,0) {$\mathcal M$\\[-1pt]\footnotesize $X/S$ market};
-  \draw[flow] (U) to[bend left=15] node[lab,above] {deposits $S^1,S^2$} (V);
-  \draw[flow] (V) to[bend left=15] node[lab,below] {shares $X^1,X^2$} (U);
+  \node[box] (M) at (4.6,0) {$\mathcal M$\\[-1pt]\footnotesize $X/S$ lending market};
+  \draw[flow] (U) to[bend left=15] node[lab,above] {deposits $S^1$; $S^2$} (V);
+  \draw[flow] (V) to[bend left=15] node[lab,below] {shares $X^1$; $X^2$} (U);
   \draw[flow] (V) to node[lab,above] {lending $S^1$} (M);
   \draw[flow] (U) to[bend right=15] node[lab,below] {deposit shares $X^1$} (M);
   \draw[flow] (M) to[bend right=15] node[lab,above] {borrow $S^2$} (U);
  \end{tikzpicture}
- \caption{Flows in the motivating example. The user $U$ deposits $S^1$
- and $S^2$ into the vault $V$ and receives shares $X^1$ and $X^2$. The
- vault lends $S^1$ to the market $\mathcal M$; the user pledges $X^1$
- there and borrows $S^2$, which is redeposited in $V$.}
+ \caption{Wash lending flow (yield source $L$ not shown):
+ user $U$ deposits $S^1$ in $V$, gets $X^1$ which it deposits in $\mathcal M$ to borrow $S^2$, which 
+ it deposits in $V$, and gets $X^2$. User $U$ is lending to itself.}
  \label{fig:flows}
 \end{figure}
 

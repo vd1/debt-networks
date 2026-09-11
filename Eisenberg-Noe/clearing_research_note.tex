@@ -1,0 +1,1221 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=30mm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage[hidelinks]{hyperref}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{assumption}[theorem]{Assumption}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{question}[theorem]{Open question}
+
+\DeclareMathOperator{\Fix}{Fix}
+\DeclareMathOperator{\diag}{diag}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathcal{N}}
+\newcommand{\pbar}{\bar p}
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\pos}[1]{\left[#1\right]^+}
+
+\title{Fractional Prepayment Games in Financial Networks\\
+\large A reconstruction and extension of the 2020 LMFI notes}
+\author{Based on the notes of Th\'eotime Zakia under the direction of Vincent Danos}
+\date{2 September 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This note develops the fractional-prepayment direction suggested by a set of
+2020 working notes on clearing in interbank debt networks.  The underlying
+model is the Rogers--Veraart extension of Eisenberg--Noe, with losses on
+external assets and interbank receipts in default.  Before clearing, each bank
+may use liquid external assets to repay any fraction of an existing liability.
+The resulting game is a continuous counterpart of the all-or-nothing
+prepayment game introduced in the later literature.
+
+The first contribution is structural.  On every regular region with a fixed
+default set, clearing payments are rational, and hence differentiable,
+functions of selective prepayments.  They are affine when prepayments preserve
+each debtor's liability proportions.  An explicit resolvent formula gives the
+Jacobian.  The second contribution is local mechanism design.  For one
+insolvent debtor, the note derives the exact cone of infinitesimal repayment
+directions that weakly benefit every creditor; pro-rata repayment is the unique
+direction that preserves all residual liability shares.  The third
+contribution is strategic.  A four-node example has a unique best response that
+prepays a strict fraction of one liability, showing that fractional strategies
+cannot in general be reduced to all-or-nothing choices.  Earlier results from
+the notes on fusion and round-trip loans are retained as background.
+\end{abstract}
+
+\tableofcontents
+
+\section{Purpose, contribution, and related literature}
+
+The original notes move between a clearing model, comparative statics, and a
+game in which banks alter their balance sheets before clearing.  Several
+calculations are exploratory, and some statements labelled as theorems are
+followed by requests to verify them.  The aim here is to make the assumptions
+visible and to pursue the strongest undeveloped direction: continuous
+prepayment before clearing.
+
+The main conclusions are as follows.
+
+\begin{enumerate}[label=(\roman*)]
+  \item The greatest clearing fixed point is the natural selection when bank
+  value is increasing in receipts from the network.
+
+  \item Fusion has a transparent local accounting rule.  The deficit of the
+  fused node is the sum of the two original deficits and the fusion cost,
+  minus the two unpaid internal claims that disappear in the fusion.
+
+  \item In the restricted three-node model, balance-sheet-consistent
+  round-trip lending cannot increase the solvent accomplice's payoff.  The
+  conclusion in the thesis is valid, but the asymmetric payoff formula needs
+  a cash-flow correction.
+
+  \item Selective early repayment creates aggregate value when liquidation of
+  external assets is costly.  The selected creditor weakly gains, but other
+  creditors may lose.  The exact local Pareto cone describes how much must be
+  repaid to each creditor to eliminate this conflict.
+
+  \item A continuous prepayment game has compact polyhedral strategy sets.
+  Within a regular fixed-default region its payoffs are differentiable rational
+  functions.  A resolvent formula reduces every local marginal calculation to
+  one linear solve.
+
+  \item Fractional actions are essential.  There are networks in which a
+  player's unique best response repays neither zero nor the whole liability.
+  The optimum is the least payment that moves another bank across a solvency
+  boundary.
+\end{enumerate}
+
+Statements about derivatives are local to a region in which the same banks
+remain solvent or insolvent.  Crossing a default boundary changes the formula
+for the clearing map and must be handled separately.
+
+\subsection{Relation to prior work}
+
+Eisenberg and Noe established the fixed-point clearing model with
+proportionality, limited liability, and priority of debt
+\cite{EisenbergNoe2001}.  Rogers and Veraart introduced default costs and
+studied mergers and rescue consortia \cite{RogersVeraart2013}.  The fusion
+material below therefore sharpens an existing operation rather than proposing
+a new one.  Netting and portfolio compression had also shown before 2020 that
+removing gross or circular liabilities can have adverse distributional and
+systemic effects \cite{AminiEtAl2016,SchuldenzuckerSeuken2020}.
+
+Strategic departures from proportional clearing were studied by Bertschinger,
+Hoefer, and Schmand \cite{BertschingerEtAl2020}.  Papp and Wattenhofer showed
+that debt forgiveness and transfers of external assets can improve a bank's
+payoff through network feedback \cite{PappWattenhofer2020}.  These operations
+are close to prepayment, but they do not model the same balance-sheet update at
+an earlier date.  Work on multiple maturities supplies a dynamic clearing
+background \cite{KusnetsovVeraart2019}.
+
+Sensitivity formulas for Eisenberg--Noe payments predate the present note.
+Liu and Staum differentiate with respect to external assets
+\cite{LiuStaum2010}; Feinstein et al. differentiate with respect to bilateral
+liabilities \cite{FeinsteinEtAl2018}.  The derivative formula below applies
+the same general idea to the simultaneous change in assets, nominal debts, and
+relative liabilities caused by prepayment.
+
+Zhou et al. later introduced a strategic prepayment game based on
+all-or-nothing repayment of whole liabilities \cite{ZhouEtAl2024}.  Their
+conclusion lists fractional prepayments and coalitional incentives as open
+directions.  The 2020 notes appear to anticipate this topic, but the present
+paper makes no claim of publication priority.  Its narrower objective is to
+develop the continuous model and results that are absent from the discrete
+formulation.
+
+\section{Clearing with default costs}
+
+\subsection{Debt networks}
+
+Let the set of banks be $\N=\{1,\ldots,n\}$.  A debt network consists of
+external assets $e\in\R_+^n$ and a liability matrix
+$L\in\R_+^{n\times n}$ with $L_{ii}=0$.  The entry $L_{ij}$ is the nominal
+amount owed by bank $i$ to bank $j$.  Define total nominal liabilities and
+relative liabilities by
+\begin{equation}
+  \pbar_i=\sum_{j\in\N}L_{ij},
+  \qquad
+  \pi_{ij}=
+  \begin{cases}
+    L_{ij}/\pbar_i, & \pbar_i>0,\\
+    0, & \pbar_i=0.
+  \end{cases}
+\end{equation}
+Thus $\pi_{ij}p_i$ is the payment from $i$ to $j$ when $i$ makes the
+total payment $p_i$.
+
+Let $\alpha,\beta\in[0,1]$.  The parameter $\alpha$ is the recovery fraction
+on external assets in default, and $\beta$ is the recovery fraction on
+interbank receipts.  The Rogers--Veraart clearing map
+$\Phi:[0,\pbar]\to[0,\pbar]$ is
+\begin{equation}\label{eq:clearing-map}
+  \Phi_i(p)=
+  \begin{cases}
+    \pbar_i,
+      & e_i+\displaystyle\sum_{j\in\N}\pi_{ji}p_j\geq\pbar_i,\\[2mm]
+    \alpha e_i+\beta\displaystyle\sum_{j\in\N}\pi_{ji}p_j,
+      & e_i+\displaystyle\sum_{j\in\N}\pi_{ji}p_j<\pbar_i.
+  \end{cases}
+\end{equation}
+A clearing vector is a fixed point of $\Phi$.
+
+The map is monotone in the product order.  Tarski's fixed-point theorem gives
+a least and a greatest fixed point.  We denote the greatest one by $p^\uparrow$.
+It can also be obtained by the decreasing iteration or default-set algorithm
+described by Rogers and Veraart \cite{RogersVeraart2013}.
+
+\subsection{Why select the greatest fixed point?}
+
+For a payment vector $p$, define the post-clearing equity of bank $i$ by
+\begin{equation}\label{eq:equity}
+  V_i(p)=
+  \pos{e_i+\sum_{j\in\N}\pi_{ji}p_j-\pbar_i}.
+\end{equation}
+This definition treats debt payments as senior to equity.
+
+\begin{proposition}[Pareto dominance of the greatest fixed point]
+For every clearing vector $p$, one has
+\begin{equation}
+  V_i(p^\uparrow)\geq V_i(p)
+  \qquad\text{for every }i\in\N.
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+By definition of the greatest fixed point, $p^\uparrow\geq p$ coordinatewise.
+Every coefficient $\pi_{ji}$ is nonnegative, so the expression inside the
+positive part in \eqref{eq:equity} is weakly increasing in $p$.  The positive
+part is also increasing.
+\end{proof}
+
+The selection matters when default costs destroy uniqueness.  For example,
+take two banks with
+\begin{equation}
+  L_{12}=L_{21}=2.2,
+  \qquad e_1=e_2=1,
+  \qquad \alpha=\beta=0.5.
+\end{equation}
+Both $(1,1)$ and $(2.2,2.2)$ are clearing vectors.  The second is the greatest
+fixed point.  This example also shows why an iteration from zero cannot simply
+be interpreted as selecting the economically preferred outcome.
+
+\section{Fusion and the cancellation of internal claims}
+
+\subsection{Definition of fusion}
+
+Fix two distinct banks $a,b\in\N$.  Their fusion is a new node $[ab]$.  Mutual
+liabilities $L_{ab}$ and $L_{ba}$ disappear, while liabilities to and from all
+other banks are added.  If $\kappa\geq0$ is the total fusion cost, then
+\begin{align}
+  e_{[ab]}&=e_a+e_b-\kappa,\\
+  \pbar_{[ab]}&=\pbar_a+\pbar_b-L_{ab}-L_{ba},\\
+  L_{[ab]j}&=L_{aj}+L_{bj},\qquad j\notin\{a,b\},\\
+  L_{j[ab]}&=L_{ja}+L_{jb},\qquad j\notin\{a,b\}.
+\end{align}
+
+The full clearing vector may change after fusion because the fused node has a
+new liability proportion.  It is therefore useful to begin with a local
+identity at fixed external payments.
+
+\subsection{A fusion deficit identity}
+
+For any candidate payment vector $p\in[0,\pbar]$, define the pre-haircut
+resource deficit of bank $i$ by
+\begin{equation}
+  \delta_i(p)=
+  \pbar_i-e_i-\sum_{j\in\N}\pi_{ji}p_j.
+\end{equation}
+Positive $\delta_i(p)$ means that $i$ cannot pay in full at the candidate
+payments.  Define the unpaid portions of the two internal claims by
+\begin{equation}
+  u_{ab}(p)=L_{ab}-\pi_{ab}p_a,
+  \qquad
+  u_{ba}(p)=L_{ba}-\pi_{ba}p_b.
+\end{equation}
+Both quantities are nonnegative.
+
+\begin{theorem}[Fusion deficit identity]\label{thm:fusion-identity}
+Hold the payments of all banks outside $\{a,b\}$ fixed.  The deficit of the
+fused node is
+\begin{equation}\label{eq:fusion-identity}
+  \delta_{[ab]}
+  =\delta_a(p)+\delta_b(p)+\kappa-u_{ab}(p)-u_{ba}(p).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+The external inflow of the fused node is
+\begin{equation}
+  \sum_{j\notin\{a,b\}}p_j(\pi_{ja}+\pi_{jb}).
+\end{equation}
+Consequently,
+\begin{align*}
+  \delta_{[ab]}
+  ={}&\pbar_a+\pbar_b-L_{ab}-L_{ba}
+      -(e_a+e_b-\kappa)\\
+    &-\sum_{j\notin\{a,b\}}p_j(\pi_{ja}+\pi_{jb}).
+\end{align*}
+On the other hand,
+\begin{align*}
+  \delta_a(p)+\delta_b(p)
+  ={}&\pbar_a+\pbar_b-e_a-e_b\\
+    &-\sum_{j\notin\{a,b\}}p_j(\pi_{ja}+\pi_{jb})
+      -\pi_{ab}p_a-\pi_{ba}p_b.
+\end{align*}
+Subtracting these expressions gives
+\begin{align*}
+  \delta_{[ab]}-\delta_a(p)-\delta_b(p)
+   & =\kappa-L_{ab}-L_{ba}+\pi_{ab}p_a+\pi_{ba}p_b\\
+   & =\kappa-u_{ab}(p)-u_{ba}(p).
+\end{align*}
+\end{proof}
+
+The identity makes the economics explicit.  Fusion adds its direct cost, but
+it also deletes internal claims that were not going to be paid.  Those unpaid
+claims are the only local source of a rescue benefit.
+
+\begin{corollary}[Local rescue criterion]\label{cor:fusion-rescue}
+At fixed external payments, the fused node can pay in full if and only if
+\begin{equation}
+  u_{ab}(p)+u_{ba}(p)
+  \geq \delta_a(p)+\delta_b(p)+\kappa.
+\end{equation}
+\end{corollary}
+
+\begin{corollary}[Common-stage insolvency]
+Suppose $a$ and $b$ are still nominal payers at a given stage, so that
+$p_a=\pbar_a$ and $p_b=\pbar_b$.  If
+$\delta_a(p)>0$ and $\delta_b(p)>0$, then their fusion is insolvent at that
+stage for every $\kappa\geq0$.
+\end{corollary}
+
+\begin{proof}
+Nominal payment implies $u_{ab}(p)=u_{ba}(p)=0$.  Apply
+Theorem~\ref{thm:fusion-identity}.
+\end{proof}
+
+This corollary gives a precise version of the claim that two banks becoming
+insolvent at the same default-set iteration cannot rescue each other by
+fusion.  A global theorem additionally requires checking that payments of the
+other banks agree up to that iteration.  This agreement holds under the usual
+same-stage construction before either fused bank reduces its payment, but it
+should not be assumed after their default because the fused liability shares
+then change.
+
+\begin{question}[Global fusion comparative statics]
+Can one characterize the change in the greatest clearing vector after fusion
+using the resolvent of the default-set linear system?  The identity
+\eqref{eq:fusion-identity} gives the direct effect.  A complete answer must also
+capture feedback through the payments of all other defaulting banks.
+\end{question}
+
+\section{Round-trip loans in a three-node network}
+
+\subsection{The restricted model}
+
+Consider banks $1$, $2$, and $n$.  Bank $1$ owes $B>0$ to bank $2$ and $A\geq0$
+to bank $n$.  Bank $2$ owes $C\geq0$ to bank $1$.  Bank $1$ has no initial
+external assets.  Banks $2$ and $n$ remain solvent, while bank $1$ remains
+insolvent.  The last condition is
+\begin{equation}\label{eq:base-insolvency}
+  C<A+B.
+\end{equation}
+
+Suppose bank $n$ lends $S_1\geq0$ to bank $1$, and bank $1$ lends
+$S_2\in[0,S_1]$ back to bank $n$.  Balance-sheet consistency gives bank $1$
+the external assets $S_1-S_2$.  Its total payment in default is
+\begin{equation}
+  \alpha(S_1-S_2)+\beta(C+S_2),
+\end{equation}
+and the fraction directed to bank $n$ is
+\begin{equation}
+  q(S_1)=\frac{A+S_1}{A+B+S_1}.
+\end{equation}
+
+The relevant net cash contribution to bank $n$ is therefore
+\begin{equation}\label{eq:corrected-loan-payoff}
+  \nu(S_1,S_2)
+  =\bigl[\alpha(S_1-S_2)+\beta(C+S_2)\bigr]q(S_1)-S_1.
+\end{equation}
+Only $S_1$ is subtracted.  The cash $S_2$ borrowed by bank $n$ is offset by
+bank $n$'s repayment of the same debt.  Subtracting both $S_1$ and $S_2$, as in
+the exploratory formula, counts the second flow twice.
+
+\subsection{No profitable round trip}
+
+\begin{theorem}[Round-trip lending is unprofitable]\label{thm:round-trip}
+Under \eqref{eq:base-insolvency}, for every
+$\alpha,\beta\in[0,1]$ and every feasible pair
+$0\leq S_2\leq S_1$,
+\begin{equation}
+  \nu(S_1,S_2)\leq\nu(0,0).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+For fixed $S_1$, the function $\nu$ is affine in $S_2$, with
+\begin{equation}
+  \frac{\partial\nu}{\partial S_2}
+  =(\beta-\alpha)q(S_1).
+\end{equation}
+
+First suppose $\beta\geq\alpha$.  The maximum over $S_2\in[0,S_1]$ is at
+$S_2=S_1$.  Put $S=S_1$ and
+\begin{equation}
+  f(S)=\beta(S+C)\frac{A+S}{A+B+S}-S.
+\end{equation}
+The derivative of the fraction before multiplication by $\beta$ is positive,
+so $\beta\leq1$ gives
+\begin{equation}
+  f'(S)
+  \leq
+  \frac{B(C-A-B)}{(A+B+S)^2}<0.
+\end{equation}
+
+Now suppose $\beta<\alpha$.  The maximum over $S_2$ is at $S_2=0$.  Put
+\begin{equation}
+  g(S)=\bigl(\alpha S+\beta C\bigr)
+       \frac{A+S}{A+B+S}-S.
+\end{equation}
+All coefficients multiplying $\alpha$ and $\beta$ in $g'(S)$ are
+nonnegative.  Replacing both parameters by $1$ gives an upper bound, hence
+\begin{equation}
+  g'(S)
+  \leq
+  \frac{B(C-A-B)}{(A+B+S)^2}<0.
+\end{equation}
+In both cases the best value is attained at $S_1=S_2=0$.
+\end{proof}
+
+Theorem~\ref{thm:round-trip} includes the symmetric case $S_1=S_2$.  Its scope
+is intentionally narrow.  A larger network may change the solvency of bank
+$2$ or create feedback through other defaulting nodes.  Those regime changes
+are not represented by \eqref{eq:corrected-loan-payoff}.
+
+\begin{remark}[Admissible balance-sheet changes]
+Changing entries of $L$ without the corresponding transfer of assets creates
+nominal claims from nothing.  Such an operation can alter proportional shares
+and can look profitable, but it is not a loan.  Any strategic model should
+require double-entry balance-sheet consistency for every action.
+\end{remark}
+
+\section{Selective early repayment}
+
+\subsection{Fixed-regime setup}
+
+Let bank $0$ be insolvent and let its creditors be $1,\ldots,m$.  Write
+\begin{equation}
+  P=\sum_{i=1}^m L_{0i}
+\end{equation}
+for its initial liabilities.  Before clearing, bank $0$ makes early repayments
+$x_i$ satisfying
+\begin{equation}\label{eq:repayment-feasibility}
+  0\leq x_i\leq L_{0i},
+  \qquad
+  X:=\sum_{i=1}^m x_i\leq e_0.
+\end{equation}
+Let $I$ denote the fixed incoming payment to bank $0$ from the rest of the
+network.  Assume throughout this section that the creditors remain solvent and
+that the other banks' payments do not change as $x$ varies.
+
+After repayment, bank $0$ has
+\begin{equation}
+  E=e_0-X,
+  \qquad
+  D=P-X,
+\end{equation}
+where $E$ is its remaining external asset and $D$ its remaining nominal debt.
+If bank $0$ was initially 0-insolvent, then
+\begin{equation}
+  e_0+I<P.
+\end{equation}
+Subtracting $X$ from both sides gives $E+I<D$.  Early repayment cannot make
+bank $0$ solvent by itself.
+
+The total clearing payment made by bank $0$ on its remaining debt is
+\begin{equation}
+  W=\alpha E+\beta I.
+\end{equation}
+Since $\alpha,\beta\leq1$, one has $W<D$.  Define the remaining liability share
+and effective recovery rate by
+\begin{equation}
+  q_i=\frac{L_{0i}-x_i}{D},
+  \qquad
+  r=\frac{W}{D}.
+\end{equation}
+Then $q_i\in[0,1]$, $\sum_iq_i=1$, and $r<1$.
+
+Up to terms independent of $x$, creditor $i$ has value
+\begin{equation}\label{eq:creditor-value}
+  R_i(x)=x_i+Wq_i+K_i,
+\end{equation}
+where $K_i$ collects its external assets, other incoming payments, and
+liabilities.
+
+\subsection{Own and cross effects}
+
+\begin{theorem}[Marginal effects of selective repayment]
+Within the fixed default regime,
+\begin{align}
+  \frac{\partial R_i}{\partial x_i}
+    &=1-\alpha q_i-r(1-q_i)\geq0,
+      \label{eq:own-effect}\\
+  \frac{\partial R_i}{\partial x_k}
+    &=q_i(r-\alpha),
+      \qquad k\neq i,
+      \label{eq:cross-effect}\\
+  \frac{\partial}{\partial x_k}\sum_{i=1}^m R_i
+    &=1-\alpha\geq0.
+      \label{eq:aggregate-effect}
+\end{align}
+\end{theorem}
+
+\begin{proof}
+For repayment to creditor $i$, both $L_{0i}-x_i$ and $D$ have derivative
+$-1$, while $W$ has derivative $-\alpha$.  Differentiating
+\eqref{eq:creditor-value} gives
+\begin{align*}
+  \frac{\partial R_i}{\partial x_i}
+  &=1-\alpha\frac{L_{0i}-x_i}{D}
+    -W\frac{D-(L_{0i}-x_i)}{D^2}\\
+  &=1-\alpha q_i-r(1-q_i).
+\end{align*}
+The quantity subtracted from $1$ is a convex combination of $\alpha$ and
+$r$, both of which are at most $1$.  This proves
+\eqref{eq:own-effect}.
+
+For $k\neq i$, the numerator $L_{0i}-x_i$ is fixed, while $W$ and $D$ both
+decrease.  Hence
+\begin{equation*}
+  \frac{\partial R_i}{\partial x_k}
+  =-\alpha q_i+\frac{W}{D}q_i=q_i(r-\alpha),
+\end{equation*}
+which is \eqref{eq:cross-effect}.  Finally,
+\begin{equation}
+  \sum_{i=1}^m R_i=X+W+\sum_{i=1}^m K_i,
+\end{equation}
+and differentiation gives \eqref{eq:aggregate-effect}.
+\end{proof}
+
+Equation~\eqref{eq:own-effect} proves the early-repayment conjecture in the
+2020 thesis under its stated fixed-regime assumptions.  The selected creditor
+cannot be harmed by receiving more money early.
+
+Equation~\eqref{eq:cross-effect} gives the missing distributional result.
+All creditors not selected for repayment move in the same direction:
+\begin{itemize}
+  \item if $r<\alpha$, every non-selected creditor with a positive remaining
+  claim loses;
+  \item if $r=\alpha$, non-selected creditors are locally indifferent;
+  \item if $r>\alpha$, every creditor weakly benefits.
+\end{itemize}
+
+\begin{corollary}[Marginal Pareto criterion]
+A selective early repayment is a Pareto improvement for the creditors if
+$r\geq\alpha$.  If $r<\alpha$ and a non-selected creditor has a positive
+remaining claim, the repayment is not a Pareto improvement even though total
+creditor value rises by $1-\alpha$ per unit.
+\end{corollary}
+
+The conflict is therefore not between efficiency and all repayment.  It is
+between aggregate recovery and the distribution of that recovery.
+
+The preceding calculation extends from a payment to one creditor to an
+arbitrary infinitesimal repayment direction.  Let $h_i\geq0$ be the rate of
+repayment to creditor $i$ and put $H=\sum_i h_i$.
+
+\begin{theorem}[The local Pareto cone]\label{thm:pareto-cone}
+Within the fixed default regime, the directional derivative of creditor $i$'s
+value is
+\begin{equation}\label{eq:directional-creditor}
+  \dot R_i=(1-r)h_i+(r-\alpha)Hq_i.
+\end{equation}
+Consequently:
+\begin{enumerate}[label=(\roman*)]
+  \item if $r\geq\alpha$, every nonnegative repayment direction is locally
+  Pareto improving for the creditors;
+  \item if $r<\alpha$ and $H>0$, a direction is locally Pareto improving if
+  and only if
+  \begin{equation}\label{eq:pareto-cone}
+    \frac{h_i}{H}
+    \geq q_i\frac{\alpha-r}{1-r}
+    \qquad\text{for every }i.
+  \end{equation}
+\end{enumerate}
+The cone in \eqref{eq:pareto-cone} is nonempty.  When $\alpha<1$, the share of
+the marginal repayment not forced by the inequalities is
+$(1-\alpha)/(1-r)$.
+\end{theorem}
+
+\begin{proof}
+Along the direction $h$, one has
+\begin{equation}
+  \dot W=-\alpha H,
+  \qquad
+  \dot D=-H,
+  \qquad
+  \dot q_i=\frac{Hq_i-h_i}{D}.
+\end{equation}
+Differentiating $R_i=x_i+Wq_i+K_i$ gives
+\begin{equation*}
+  \dot R_i
+  =h_i-\alpha Hq_i+r(Hq_i-h_i),
+\end{equation*}
+which is \eqref{eq:directional-creditor}.  If $r\geq\alpha$, both terms in
+\eqref{eq:directional-creditor} are nonnegative.  If $r<\alpha$, then $r<1$,
+and rearranging $\dot R_i\geq0$ gives \eqref{eq:pareto-cone}.  The lower bounds
+on the repayment shares sum to
+\begin{equation}
+  \frac{\alpha-r}{1-r}\sum_iq_i
+  =\frac{\alpha-r}{1-r}\leq1.
+\end{equation}
+The remaining share equals $(1-\alpha)/(1-r)$.
+\end{proof}
+
+Theorem~\ref{thm:pareto-cone} gives an exact local compensation rule.  When
+$r<\alpha$, a targeted repayment may still be safe, but excluded creditors
+must receive the lower-bound shares in \eqref{eq:pareto-cone}.  Any remaining
+share can be directed to the creditor whose rescue creates the largest network
+benefit.
+
+\subsection{A pro-rata safe harbor}
+
+Selective repayment changes liability shares.  A natural alternative is to
+allow early repayment only in the original proportions.
+
+\begin{theorem}[Pro-rata early repayment]\label{thm:pro-rata}
+Let
+\begin{equation}
+  x_i(t)=tL_{0i},
+  \qquad 0\leq t<1,
+  \qquad tP\leq e_0.
+\end{equation}
+Within the fixed default regime,
+\begin{equation}\label{eq:pro-rata-gain}
+  \frac{dR_i}{dt}=(1-\alpha)L_{0i}\geq0
+  \qquad\text{for every creditor }i.
+\end{equation}
+Thus pro-rata early repayment weakly benefits every creditor and preserves
+their relative claims.
+\end{theorem}
+
+\begin{proof}
+The remaining debt is $D(t)=(1-t)P$, and
+\begin{equation}
+  q_i(t)=\frac{(1-t)L_{0i}}{(1-t)P}=\frac{L_{0i}}{P}
+\end{equation}
+is constant.  Also
+\begin{equation}
+  W(t)=\alpha(e_0-tP)+\beta I.
+\end{equation}
+Substitution in \eqref{eq:creditor-value} gives
+\begin{equation}
+  R_i(t)=tL_{0i}+\frac{L_{0i}}{P}W(t)+K_i.
+\end{equation}
+Differentiating proves \eqref{eq:pro-rata-gain}.
+\end{proof}
+
+\begin{proposition}[Characterization by share preservation]
+Among nonzero infinitesimal repayment directions, the pro-rata direction
+$h_i=Hq_i$ is the unique direction that leaves every residual liability share
+$q_i$ unchanged.
+\end{proposition}
+
+\begin{proof}
+The derivative calculated in the proof of
+Theorem~\ref{thm:pareto-cone} satisfies
+\begin{equation}
+  \dot q_i=0
+  \quad\Longleftrightarrow\quad
+  h_i=Hq_i.
+\end{equation}
+Applying this equivalence to every $i$ proves the claim.
+\end{proof}
+
+Theorem~\ref{thm:pro-rata} suggests a simple rule: a standstill need not ban
+all early repayment.  It can permit payments that preserve the original
+creditor proportions.  Such payments capture the value otherwise lost through
+the factor $\alpha$ without preferring one creditor over another.
+
+\subsection{Rescuing a creditor exposed to contagion}
+
+Suppose creditor $i$ would become insolvent because bank $0$ defaults.  With
+all other early repayments fixed, Equation~\eqref{eq:own-effect} shows that
+$R_i$ is nondecreasing in $x_i$.  Consequently the exact rescue test is an
+endpoint calculation:
+\begin{equation}
+  R_i\bigl(x_i^{\max}\bigr)\geq0,
+  \qquad
+  x_i^{\max}=\min\left\{L_{0i},
+  e_0-\sum_{k\neq i}x_k\right\}.
+\end{equation}
+If the inequality fails, no feasible selective repayment to $i$ can rescue it
+within the fixed regime.  If it holds, continuity gives a least rescue
+threshold.  This formulation is more precise than a sufficient inequality
+that ignores the creditor's other assets and liabilities.
+
+\section{The continuous prepayment game}\label{sec:continuous-game}
+
+\subsection{Strategies and balance-sheet updates}
+
+Fix an initial debt network $(e,L)$.  Bank $i$ chooses a vector of outgoing
+prepayments
+\begin{equation}
+  x_i=(x_{ij})_{j\in\N}
+\end{equation}
+from the compact polytope
+\begin{equation}\label{eq:strategy-polytope}
+  \mathcal X_i=
+  \left\{x_i:
+  0\leq x_{ij}\leq L_{ij},\quad
+  \sum_jx_{ij}\leq b_i\right\},
+  \qquad 0\leq b_i\leq e_i.
+\end{equation}
+Using an initial liquidity budget $b_i$ makes the joint strategy space the
+product $\mathcal X=\prod_i\mathcal X_i$.  In particular, one bank cannot fund
+its simultaneous strategy using a prepayment that it receives from another
+bank in the same action round.
+
+For a profile $x\in\mathcal X$, double-entry consistency gives
+\begin{align}
+  e_i^x
+    &=e_i-\sum_jx_{ij}+\sum_jx_{ji},
+      \label{eq:updated-assets}\\
+  L_{ij}^x
+    &=L_{ij}-x_{ij},
+      \label{eq:updated-liabilities}\\
+  \pbar_i^x
+    &=\sum_jL_{ij}^x.
+      \label{eq:updated-total-liabilities}
+\end{align}
+Thus $\sum_i e_i^x=\sum_i e_i$: prepayment transfers external assets but does
+not create them.  Let $\Pi^x$ be the relative-liability matrix constructed
+from $L^x$, and let $p^\uparrow(x)$ be the greatest Rogers--Veraart clearing
+vector of the updated network.
+
+Two natural utility functions are total assets and equity:
+\begin{align}
+  A_i(x)
+    &=e_i^x+\sum_j\pi_{ji}^x p_j^\uparrow(x),
+      \label{eq:total-asset-utility}\\
+  V_i(x)
+    &=\pos{A_i(x)-\pbar_i^x}.
+      \label{eq:equity-utility}
+\end{align}
+Total assets distinguish outcomes for an insolvent bank whose equity is zero.
+Equity is the direct objective of shareholders.  Since these objectives can
+produce different games, every equilibrium statement should specify which one
+is being used.
+
+\subsection{Regular default regions}
+
+Let $D$ be a proposed set of defaulting banks and let $S=\N\setminus D$.
+Consider an open set of prepayment profiles on which all banks in $D$ are
+strictly insolvent, all banks in $S$ are solvent, and
+$\pbar_i^x>0$ for every relevant row.  On this set,
+\begin{equation}\label{eq:default-cell-system}
+  p_D(x)
+  =\alpha e_D^x
+   +\beta(\Pi_{DD}^x)^{\mathsf T}p_D(x)
+   +\beta(\Pi_{SD}^x)^{\mathsf T}\pbar_S^x,
+  \qquad
+  p_S(x)=\pbar_S^x.
+\end{equation}
+Define the default-set resolvent
+\begin{equation}\label{eq:default-resolvent}
+  M_D(x)=
+  \left[I-\beta(\Pi_{DD}^x)^{\mathsf T}\right]^{-1}
+\end{equation}
+whenever the inverse exists.  It always exists when $\beta<1$ because
+$\Pi_{DD}^x$ is substochastic.  When $\beta=1$, invertibility is a regularity
+condition on the defaulting subnetwork.
+
+\begin{theorem}[Geometry of a fixed-default region]
+\label{thm:fixed-default-geometry}
+On a region satisfying the preceding strict inequalities and invertibility
+condition,
+\begin{equation}\label{eq:fixed-cell-solution}
+  p_D(x)=M_D(x)
+  \left[
+    \alpha e_D^x
+    +\beta(\Pi_{SD}^x)^{\mathsf T}\pbar_S^x
+  \right].
+\end{equation}
+The clearing payments and the utilities in
+\eqref{eq:total-asset-utility}--\eqref{eq:equity-utility} are rational, hence
+real analytic, functions of $x$ on the region.  They need not be affine.
+
+If every active debtor prepays proportionally,
+\begin{equation}\label{eq:row-proportional-action}
+  x_{ij}=t_iL_{ij},
+  \qquad 0\leq t_i<1,
+\end{equation}
+then $\Pi^x=\Pi$.  On every fixed-default region, $p^\uparrow(x)$ is then an
+affine function of the vector $t$.
+\end{theorem}
+
+\begin{proof}
+Equation~\eqref{eq:fixed-cell-solution} follows by rearranging
+\eqref{eq:default-cell-system}.  Assets and nominal liabilities are affine in
+$x$.  Every nonzero relative-liability entry has the form
+\begin{equation}
+  \pi_{ij}^x=\frac{L_{ij}-x_{ij}}
+  {\pbar_i-\sum_kx_{ik}},
+\end{equation}
+so it is rational.  Matrix inversion expresses each entry of $M_D(x)$ as a
+ratio of determinants.  Formula~\eqref{eq:fixed-cell-solution} is therefore
+rational wherever the denominators and determinant do not vanish.  Selective
+prepayment generally changes the displayed ratio nonlinearly, which rules out
+a general affine claim.
+
+Under \eqref{eq:row-proportional-action}, every residual row of liabilities is
+multiplied by $1-t_i$, so its relative proportions are unchanged.  The matrix
+in \eqref{eq:default-resolvent} is constant, while $e^x$ and $\pbar^x$ are
+affine in $t$.  Formula~\eqref{eq:fixed-cell-solution} is therefore affine.
+\end{proof}
+
+Theorem~\ref{thm:fixed-default-geometry} gives a finite default-set
+decomposition, but it is not a globally smooth decomposition.  Default
+costs can create jumps when a bank becomes just solvent.  Such boundaries can
+determine best responses, as Theorem~\ref{thm:fractional-best-response} below
+shows.
+
+\subsection{A resolvent formula for marginal effects}
+
+Let $x(t)=x+th$ remain inside a regular fixed-default region for small $t$.
+Put
+\begin{equation}
+  H_i=\sum_jh_{ij}.
+\end{equation}
+Dots denote derivatives at $t=0$.  Direct differentiation of the
+balance-sheet update gives
+\begin{align}
+  \dot e_i&=-H_i+\sum_jh_{ji},
+      \label{eq:asset-direction}\\
+  \dot{\pbar}_i&=-H_i,
+      \label{eq:liability-direction}\\
+  \dot\pi_{ij}
+    &=\frac{\pi_{ij}^xH_i-h_{ij}}{\pbar_i^x}.
+      \label{eq:relative-liability-direction}
+\end{align}
+
+\begin{theorem}[Prepayment Jacobian]\label{thm:prepayment-jacobian}
+Inside a regular region with default set $D$, the directional derivative of
+the clearing vector is $\dot p_S=\dot{\pbar}_S$ and
+\begin{equation}\label{eq:prepayment-jacobian}
+  \dot p_D=M_D(x)\left[
+    \alpha\dot e_D
+    +\beta(\dot\Pi_{DD})^{\mathsf T}p_D
+    +\beta(\dot\Pi_{SD})^{\mathsf T}\pbar_S
+    +\beta(\Pi_{SD}^x)^{\mathsf T}\dot{\pbar}_S
+  \right].
+\end{equation}
+Consequently,
+\begin{equation}\label{eq:asset-utility-jacobian}
+  \dot A_i
+  =\dot e_i+
+   \sum_j\left(\dot\pi_{ji}p_j+\pi_{ji}^x\dot p_j\right).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Differentiate \eqref{eq:default-cell-system} and collect the terms containing
+$\dot p_D$ on the left.  Multiplication by the inverse in
+\eqref{eq:default-resolvent} gives
+\eqref{eq:prepayment-jacobian}.  Equation
+\eqref{eq:asset-utility-jacobian} follows by differentiating
+\eqref{eq:total-asset-utility}.
+\end{proof}
+
+The resolvent $M_D$ is a network multiplier.  The bracketed vector in
+\eqref{eq:prepayment-jacobian} is the direct balance-sheet and liability-share
+effect of the action; multiplication by $M_D$ propagates it through cycles of
+defaulting banks.  A local best-response calculation therefore requires one
+factorization of $I-\beta(\Pi_{DD}^x)^{\mathsf T}$ and one linear solve per
+candidate direction.
+
+\subsection{A uniquely optimal fractional prepayment}
+
+The discrete prepayment model permits only full repayment of an edge or no
+repayment.  The following example shows that this restriction can exclude the
+unique best response.
+
+\begin{theorem}[Fractional best responses are essential]
+\label{thm:fractional-best-response}
+For every $\alpha\in[0,1)$, there is a Rogers--Veraart network with $\beta=0$
+in which a bank maximizing total assets has a unique best response that
+prepays a strict fraction of one liability.  The same conclusion holds for
+every $\beta\in[0,1)$ when $\alpha=0$.
+\end{theorem}
+
+\begin{proof}
+Consider banks $0,1,2$ and an outside sink $\omega$.  Let
+\begin{equation}
+  L_{01}=10,
+  \qquad L_{0\omega}=30,
+  \qquad L_{12}=10,
+  \qquad L_{20}=10,
+\end{equation}
+with all other liabilities zero.  External assets are
+\begin{equation}
+  e_0=10,
+  \qquad e_1=4,
+  \qquad e_2=e_\omega=0,
+\end{equation}
+and first set $\beta=0$.  Only bank $0$ acts.  It chooses a prepayment
+$x=x_{01}\in[0,10]$.  Bank $0$ is always insolvent and pays
+$p_0=\alpha(10-x)$.  Its clearing payment to bank $1$ is
+\begin{equation}
+  z_{01}(x)
+  =\alpha\frac{(10-x)^2}{40-x}.
+\end{equation}
+Bank $1$ becomes solvent at the unique solution $x_\alpha$ of
+\begin{equation}\label{eq:fractional-threshold}
+  4+x+\alpha\frac{(10-x)^2}{40-x}=10.
+\end{equation}
+Indeed, the left-hand side is strictly increasing on $[0,10]$.  To see this,
+put $g(x)=(10-x)^2/(40-x)$.  Then
+\begin{equation}
+  g'(x)=\frac{(10-x)(x-70)}{(40-x)^2}
+  \geq-\frac{7}{16},
+\end{equation}
+so the derivative of the left-hand side of
+\eqref{eq:fractional-threshold} is at least $1-7\alpha/16>0$.  Its value at
+$x=0$ is $4+5\alpha/2<10$, while its value at $x=6$ is
+$10+8\alpha/17\geq10$.  Hence
+\begin{equation}
+  0<x_\alpha\leq6<10.
+\end{equation}
+
+Below $x_\alpha$, bank $1$ defaults and bank $2$ receives less than its
+nominal claim.  Since $\beta=0$ and bank $2$ has no external assets, it pays
+zero to bank $0$.  At and above $x_\alpha$, bank $1$ pays $10$ to bank $2$,
+which becomes solvent and pays $10$ to bank $0$.  Bank $0$ remains insolvent
+because its post-action liabilities are $40-x$ and its pre-haircut resources
+are at most $20-x$.  Bank $0$'s total-asset utility is therefore
+\begin{equation}
+  A_0(x)=
+  \begin{cases}
+    10-x, & 0\leq x<x_\alpha,\\
+    20-x, & x_\alpha\leq x\leq10.
+  \end{cases}
+\end{equation}
+Its unique maximizer is $x=x_\alpha$, a strict fraction of $L_{01}$.
+
+Finally, set $\alpha=0$ and take any $\beta<1$.  For $x<6$, the payments in
+the cycle satisfy
+\begin{equation}
+  p_0=\beta p_2,
+  \qquad
+  p_1=\beta\frac{10-x}{40-x}p_0,
+  \qquad
+  p_2=\beta p_1.
+\end{equation}
+Their only solution is zero because
+$\beta^3(10-x)/(40-x)<1$.  At $x=6$, bank $1$ and then bank $2$ become
+solvent.  The same utility calculation gives a unique maximizer $x=6$.
+\end{proof}
+
+The optimum in this example is a solvency threshold.  Below it, the marginal
+payment does not activate the return path $1\to2\to0$; above it, further
+prepayment only spends bank $0$'s external assets.  This phenomenon is missed
+both by endpoint-only strategies and by optimization confined to the interior
+of a fixed-default region.
+
+\section{A precise standstill problem}
+
+The word ``fraud'' in the working notes covers two different phenomena.
+Creating a liability without transferring the corresponding asset violates
+balance-sheet consistency.  Selective early repayment is different: it is a
+real transfer, but it violates equal treatment of creditors.
+
+The latter creates a simple coalition incentive.
+
+\begin{proposition}[Bilateral repayment incentive]
+Suppose bank $0$ remains insolvent, so its post-clearing equity is zero.  If
+bank $0$ and creditor $i$ can jointly choose $x_i$ at no transaction cost while
+other repayments are fixed, then the coalition weakly prefers the largest
+feasible $x_i$.  The preference is strict whenever creditor $i$'s derivative
+in \eqref{eq:own-effect} is positive.
+\end{proposition}
+
+\begin{proof}
+Bank $0$ remains 0-insolvent because early repayment subtracts the same amount
+from its assets and liabilities.  Its equity therefore remains zero.  The
+selected creditor's value is nondecreasing by
+\eqref{eq:own-effect}.
+\end{proof}
+
+This proposition captures the valid part of the tentative standstill theorem.
+It is not by itself a Nash theorem.  A Nash statement requires a specified
+action protocol, control rights over payments, liquidity constraints,
+information, side payments, and the actions available to excluded creditors.
+
+The results suggest three possible institutional rules.
+
+\begin{enumerate}[label=(\alph*)]
+  \item \textbf{Strict standstill.}  Freeze all pre-clearing transfers.  This
+  prevents preference but discards the surplus from avoiding liquidation.
+
+  \item \textbf{Pro-rata safe harbor.}  Permit only repayments proportional to
+  existing liabilities.  Theorem~\ref{thm:pro-rata} shows that this is a Pareto
+  improvement for creditors in the fixed regime.
+
+  \item \textbf{Pareto-cone safe harbor.}  Permit a targeted repayment when its
+  marginal shares satisfy \eqref{eq:pareto-cone}.  The uncommitted share
+  $(1-\alpha)/(1-r)$ can target a creditor near insolvency while the required
+  lower-bound shares protect the others.  Implementation requires observable
+  claims and an estimate of $r$.
+\end{enumerate}
+
+\section{Nonlinear liquidation losses}
+
+A constant recovery fraction is a useful first model, but market impact should
+usually depend on the amount liquidated.  Let $F(E)$ be the cash recovered from
+liquidating external assets $E$, with
+\begin{equation}
+  0\leq F(E)\leq E.
+\end{equation}
+The linear model is $F(E)=\alpha E$.  Under pro-rata early repayment,
+\begin{equation}
+  W(t)=F(e_0-tP)+\beta I.
+\end{equation}
+
+\begin{proposition}[Pro-rata repayment with market impact]
+If $F$ is differentiable, then
+\begin{equation}
+  \frac{dR_i}{dt}
+  =L_{0i}\bigl[1-F'(e_0-tP)\bigr].
+\end{equation}
+Pro-rata early repayment benefits every creditor whenever the marginal
+liquidation recovery satisfies $F'(E)\leq1$.
+\end{proposition}
+
+\begin{proof}
+The liability share remains $L_{0i}/P$.  Therefore
+\begin{equation}
+  R_i(t)
+  =tL_{0i}
+   +\frac{L_{0i}}{P}
+      \bigl[F(e_0-tP)+\beta I\bigr]+K_i.
+\end{equation}
+Differentiate with respect to $t$.
+\end{proof}
+
+The economically relevant primitive is thus the total recovery function $F$,
+not merely a recovery fraction written as $\alpha(E)$.  If
+$F(E)=\alpha(E)E$, then
+\begin{equation}
+  F'(E)=\alpha(E)+E\alpha'(E).
+\end{equation}
+
+\section{Discrete time}
+
+For a dynamic version, the repayment budget must be aggregate.  At date $t$,
+choose $x_i(t)\geq0$ such that
+\begin{equation}
+  \sum_i x_i(t)\leq e_0(t),
+  \qquad
+  x_i(t)\leq L_{0i}(t).
+\end{equation}
+The balance-sheet updates are
+\begin{align}
+  e_0(t+1)&=e_0(t)-\sum_i x_i(t),\\
+  e_i(t+1)&=e_i(t)+x_i(t),\\
+  L_{0i}(t+1)&=L_{0i}(t)-x_i(t).
+\end{align}
+These equations conserve external assets inside the network.  If incoming
+payments to bank $0$ are unchanged, its pre-haircut solvency gap is invariant:
+\begin{equation}
+  \bigl[P(t+1)-e_0(t+1)-I(t+1)\bigr]
+  =P(t)-e_0(t)-I(t).
+\end{equation}
+Thus repayment alone cannot repair bank $0$'s own fundamental deficit, though
+it can alter the solvency of its creditors and hence future feedback through
+the network.
+
+A complete dynamic game would also specify the clearing time, stochastic
+external-asset shocks, the timing of information, and whether actions are
+observable.  Without these ingredients, claims about equilibrium timing are
+not well defined.
+
+\section{Research programme}
+
+The calculations above lead to several concrete problems.
+
+\subsection{A global best-response algorithm}
+
+Theorem~\ref{thm:prepayment-jacobian} solves the smooth part of the problem.
+A global algorithm should combine three types of candidates:
+\begin{enumerate}[label=(\roman*)]
+  \item stationary points and active faces of the strategy polytope inside a
+  regular default region;
+  \item solvency boundaries at which a bank changes branch in the clearing
+  map;
+  \item singular boundaries at which a liability row vanishes or the
+  default-set resolvent ceases to exist.
+\end{enumerate}
+Theorem~\ref{thm:fractional-best-response} shows that the second class cannot
+be omitted.  An implementable first algorithm could enumerate default sets for
+small networks, use \eqref{eq:prepayment-jacobian} for local optimization, and
+solve one-dimensional threshold equations along candidate edges.
+
+\subsection{Existence of equilibrium}
+
+The strategy space \eqref{eq:strategy-polytope} is compact and convex, but
+default costs can make the utilities discontinuous at solvency boundaries.
+Compactness alone therefore does not give a pure or mixed equilibrium.  Useful
+next results would identify network classes for which best responses are
+nonempty and convex-valued, or replace the discontinuous default rule by a
+continuous recovery function and apply a fixed-point theorem.  A separate
+question is whether equilibrium is restored when actions must preserve
+liability proportions.
+
+\subsection{Robust fractional optimality}
+
+Theorem~\ref{thm:fractional-best-response} covers both recovery-parameter axes.
+The next step is to characterize fractional threshold optima when
+$\alpha,\beta>0$.  One expects them when the return through a newly solvent
+path exceeds the direct cost of reaching the threshold, while the marginal
+return beyond the threshold is below one.  A useful theorem would state these
+conditions in terms of the two neighboring default-set resolvents.
+
+\subsection{Strategic games with explicit control rights}
+
+To turn the standstill intuition into an equilibrium theorem, specify:
+\begin{enumerate}[label=(\roman*)]
+  \item who proposes and authorizes a repayment;
+  \item whether creditor consent is required;
+  \item whether side payments are allowed;
+  \item what each player observes;
+  \item whether new liabilities require a matching asset transfer;
+  \item how the clearing date is chosen.
+\end{enumerate}
+The bilateral incentive proposition then becomes an input to the game rather
+than a substitute for its definition.
+
+\subsection{Mechanism design for safe early repayment}
+
+The local Pareto cone is the simplest targeted rule.  Further work should ask
+whether its stepwise application remains Pareto improving after the effective
+recovery rate and the default set change.  If selective repayment prevents a
+specific contagion event, the mechanism should compare the jump in network
+value at that boundary with the compensation required along the path to it.
+The pro-rata rule remains the information-light benchmark because it does not
+require an estimate of $r$.
+
+\subsection{Dynamic and coalitional extensions}
+
+With multiple action dates, a bank may fund a later prepayment from an earlier
+receipt.  The game then needs explicit settlement order, information, and
+clearing time.  Coalitions introduce a second problem: the debtor may have zero
+equity and be indifferent while a selected creditor gains.  Side payments can
+turn that weak incentive into a strict joint deviation.  A promising solution
+concept is therefore coalition-proof equilibrium under the Pareto-cone safe
+harbor rather than Nash equilibrium under unrestricted actions.
+
+\section{Conclusion}
+
+The notes point to a genuine design tension.  A complete payment freeze protects
+equal treatment but can force avoidable liquidation losses.  Unrestricted
+pre-clearing bargaining can preserve value but allows coalitions to redirect
+recovery away from excluded creditors.
+
+The continuous model sharpens this tension.  Inside a regular default region,
+the resolvent formula makes marginal incentives computable.  Selective actions
+produce rational rather than generally affine payoffs, while proportional
+actions recover an affine structure.  At region boundaries, fractional
+payments can be uniquely optimal because the least payment that rescues a bank
+activates an entire return path through the network.
+
+These results support a middle course for a clearing protocol: enforce
+balance-sheet consistency, use pro-rata repayment when only local information
+is available, and permit targeted departures when the Pareto-cone constraints
+can be verified.  The main mathematical problem left is global: combine smooth
+optimization inside default regions with the discrete solvency transitions
+between them, then establish equilibrium under the resulting discontinuous
+payoffs.
+
+\begin{thebibliography}{99}
+
+\bibitem{EisenbergNoe2001}
+L.~Eisenberg and T.~H. Noe.
+\newblock Systemic risk in financial systems.
+\newblock \emph{Management Science}, 47(2):236--249, 2001.
+
+\bibitem{RogersVeraart2013}
+L.~C.~G. Rogers and L.~A.~M. Veraart.
+\newblock Failure and rescue in an interbank network.
+\newblock \emph{Management Science}, 59(4):882--898, 2013.
+
+\bibitem{AminiEtAl2016}
+H.~Amini, D.~Filipovi\'c, and A.~Minca.
+\newblock To fully net or not to net: Adverse effects of partial multilateral
+netting.
+\newblock \emph{Operations Research}, 64(5):1135--1142, 2016.
+
+\bibitem{SchuldenzuckerSeuken2020}
+S.~Schuldenzucker and S.~Seuken.
+\newblock Portfolio compression in financial networks: Incentives and
+systemic risk.
+\newblock In \emph{Proceedings of the 21st ACM Conference on Economics and
+Computation}, page 79, 2020.
+
+\bibitem{BertschingerEtAl2020}
+N.~Bertschinger, M.~Hoefer, and D.~Schmand.
+\newblock Strategic payments in financial networks.
+\newblock In \emph{11th Innovations in Theoretical Computer Science
+Conference}, volume 151 of \emph{LIPIcs}, pages 46:1--46:16, 2020.
+
+\bibitem{PappWattenhofer2020}
+P.~A. Papp and R.~Wattenhofer.
+\newblock Network-aware strategies in financial systems.
+\newblock In \emph{47th International Colloquium on Automata, Languages, and
+Programming}, volume 168 of \emph{LIPIcs}, pages 91:1--91:17, 2020.
+
+\bibitem{KusnetsovVeraart2019}
+M.~Kusnetsov and L.~A.~M. Veraart.
+\newblock Interbank clearing in financial networks with multiple maturities.
+\newblock \emph{SIAM Journal on Financial Mathematics}, 10(1):37--67, 2019.
+
+\bibitem{LiuStaum2010}
+M.~Liu and J.~Staum.
+\newblock Sensitivity analysis of the Eisenberg--Noe model of contagion.
+\newblock \emph{Operations Research Letters}, 38(5):489--491, 2010.
+
+\bibitem{FeinsteinEtAl2018}
+Z.~Feinstein, W.~Pang, B.~Rudloff, E.~Schaanning, S.~Sturm, and M.~Wildman.
+\newblock Sensitivity of the Eisenberg--Noe clearing vector to individual
+interbank liabilities.
+\newblock \emph{SIAM Journal on Financial Mathematics}, 9(4):1286--1325,
+2018.
+
+\bibitem{ZhouEtAl2024}
+H.~Zhou, Y.~Wang, K.~Varsos, N.~Bishop, R.~Savani, A.~Calinescu, and
+M.~Wooldridge.
+\newblock A strategic analysis of prepayments in financial credit networks.
+\newblock In \emph{Proceedings of the Thirty-Third International Joint
+Conference on Artificial Intelligence}, pages 3040--3047, 2024.
+
+\end{thebibliography}
+
+\end{document}
