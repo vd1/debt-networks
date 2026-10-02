@@ -1,0 +1,234 @@
+% fichier de macros fondamentales
+%\Requires{amssymb}
+
+\def\mph#1{\par {\it\textcolor{blue}{{#1}}}}
+
+% to quote
+
+\def\QU{\begin{quote}\it}
+\def\UQ{\end{quote}}
+\def\QUO{\begin{quotation}\it}
+\def\OUQ{\end{quotation}}
+
+% NBs and Qs and caveats
+
+\newcommand{\CV}[1][]{\tbf{CV#1 - }}
+\newcommand{\NB}[1][]{\tbf{NB#1 - }}
+%\newcommand{\example}[2][YYY]{Mandatory arg: #2;
+%                              Optional arg: #1}
+\newcommand{\RK}[1][]{\tbf{RK#1 - }}
+\newcommand{\ID}[1][]{\tbf{ID#1 - }}
+\newcommand{\MS}{\tbf{M - }}
+\newcommand{\QS}[1][]{\tbf{QS#1 -}}
+%\newcommand{\QS}{\tbf{Q - }}
+
+
+%\newenvironment{proof}{Proof: }{\qed}
+
+\def\ddt{\frac{d}{dt}}
+
+% Greeks
+\def\al{\alpha}
+\def\ba{\beta}
+\def\ga{\gamma}
+\let\da\delta
+\def\eps{\epsilon}
+\def\ka{\kappa}
+\def\la{\lambda}
+\def\sig{\sigma}
+\def\ta{\theta}
+%\def\phi{\varphi}
+\def\om{\omega}
+
+\def\Ga{\Gamma}
+\def\Da{\Delta}
+\def\La{\Lambda}
+\def\Ta{\Theta}
+\def\Sig{\Sigma}
+\def\Om{\Omega}
+\def\Ups{\Upsilon}
+
+% Arrows
+\def\rlhar{\rightleftharpoons}
+\def\prd{\pi}
+\def\uph{\upharpoonright}
+\def\rar{\rightarrow}
+\def\lar{\leftarrow}
+\def\ot{\leftarrow}
+\def\srar{\mathrel{\rar\hskip-1.95ex\rar}}
+\def\red{\rar}
+\def\Rar{\Rightarrow}
+\def\Lar{\Leftarrow}
+\def\lgrar{\longrightarrow}
+\def\lRar{\Longrightarrow}
+\def\Lrar{\Leftrightarrow}
+\def\lrar{\leftrightarrow}
+\def\slar#1{\stackrel{#1}{\lrar}}
+\def\uar{\uparrow}
+\def\sea{\searrow}
+\def\dar{\mathop{\downarrow\hskip-1.5pt}}
+\def\Dar{\mathop{\Downarrow\hskip-1.5pt}}
+\def\sdef#1{\stackrel{\tiny{def}}{#1}}
+\def\rhu{\rightharpoonup}
+\def\hrar{\hookrightarrow}
+\def\qrar{&\quad\lrar\quad&}
+\def\qqrar{\quad\lrar\quad}
+
+% Fonts
+\def\ttt{\texttt}
+\def\mtt{\mathtt}
+\def\tsc{\textsc}
+\def\tsf{\textsf}
+\def\msf{\mathsf}
+\def\mbf{\mathbf}
+\def\tbf{\textbf}
+\def\mcl{\mathcal}
+\def\mbb{\mathbb}
+\def\mfrk{\mathfrak}
+\def\mfr{\mathfrak}
+
+% Colors
+\definecolor{my}{cmyk}{0.5,0.5,.3,0}
+\definecolor{my2}{cmyk}{0.8,0.1,.3,0}
+\definecolor{defcolor}{cmyk}{.0,.9,.0,.0}
+\def\defn#1{\textcolor{Ocolor}{#1}}
+\definecolor{Pcolor}{rgb}{.1,.9,.9}
+\definecolor{Ocolor}{rgb}{.9,.1,.1}
+%\pagecolor{my}
+%\definecolor{defcolor}{rgb}{.99,.23,.21}
+%\definecolor{defcolor}{rgb}{1.0,.0,.0}
+%\def\emph#1{\textcolor{Pcolor}{#1}}
+\def\tb#1{\textcolor{blue}{#1}}
+\def\rb#1{\textcolor{red}{#1}}
+\def\tr#1{\textcolor{Ocolor}{#1}}
+\def\bob{\textcolor{Pcolor}{\large $\bullet$\ }}
+\def\rob{\textcolor{Ocolor}{\large $\bullet$\ }}
+\def\hbob{\hbox{\bob}}
+\def\hrob{\hbox{\rob}}
+\def\bll{\tb{\large $\blacktriangleright$}}
+
+% theorems
+\newtheorem{rem}{Remarque}\def\RE{\begin{rem}}\def\ER{\end{rem}}
+%\newtheorem{example}{Example}\def\EX{\begin{example}}\def\XE{\end{example}}
+\newtheorem{prop}{Proposition}\def\PRO{\begin{prop}}\def\ORP{\end{prop}}
+\newtheorem{coro}{Corollary}\def\COR{\begin{coro}}\def\ROC{\end{coro}}
+\newtheorem{theo}{Theorem}\def\TH{\begin{theo}}\def\HT{\end{theo}}
+\newtheorem{defi}{Definition}\def\DE{\begin{defi}}\def\ED{\end{defi}}
+\newtheorem{lemme}{Lemma}\def\LE{\begin{lemme}}\def\EL{\end{lemme}}
+%\newtheorem{note}{Note}\def\NT{\begin{note}}\def\TN{\end{note}}
+
+% list
+\newcommand{\LI}[1][\textcolor{red}{$\ast\ast$}]{
+\begin{list}{#1}{\itemsep-.8ex\leftmargin6ex\topsep0ex\partopsep1ex}}
+\def\IL{\end{list}}
+
+% arrays
+\newcommand{\AR}[2][c]{$$\begin{array}[#1]{lllllllllllllll}#2\end{array}$$}
+\def\ARd#1#2{\AR{#1&:=&\left\{\begin{array}{lr}#2\end{array}\right.}}
+\def\MA#1{\left(\begin{matrix}#1\end{matrix}\right)}
+\def\sMA#1{{\hbox{\tiny $\MA{#1}$}}}
+\def\NAR#1{$#1$}
+\def\EQ#1{\begin{eqnarray}#1\end{eqnarray}}
+\def\XY#1{\xymatrix{#1}}
+\def\mypar#1{\medskip\par\textbf{\emph{#1}}}
+
+% sets
+\def\emptyset{\varnothing}
+\def\setminus{\smallsetminus}
+\def\subin{\subseteq\in}
+\def\card#1{|#1|}
+\def\ens#1{\{#1\}}
+\def\inD#1{{\mbf 1}_{#1}}
+\def\symdif{\mathop{\triangle}}
+\def\mset#1{#1^!}
+\def\pot#1{[#1]}
+
+% misc.
+\def\resp{\textrm{resp.}}
+\def\ie{\textit{i.e.}}
+\def\eg{\textit{e.g.}}
+\def\aka{\textit{a.k.a.}}
+\def\iow{\emph{i.o.w.\ }}
+\def\etc{\emph{etc\ }}
+\def\mo{^{-1}}
+\def\st{^\star}
+\def\dag{^\dagger}
+\def\pep{^\bot}
+\def\ST{^\star}
+\def\aast{\diamond}
+\def\CI{^\circ}
+\def\sem#1{[\hspace{-.35ex}[#1]\hspace{-.35ex}]}
+\def\sec#1{\{\hspace{-.50ex}|#1|\hspace{-.37ex}\}}
+\def\tup#1{\langle#1\rangle}
+\def\tuple#1{\langle#1\rangle}
+\def\ang#1#2{\tuple{#1}_{#2}}
+\def\blob{$\bullet$}
+\def\qed{$\Box$}
+\def\Dia{\diamond}
+%\renewenvironment{\Proof}[1]{\emph{Proof}: #1{$\Box$\par\medskip}}
+\def\suchthat{\mathrel{|}}
+\newcounter{marg}
+\def\margo#1{
+\stepcounter{marg}
+{\tiny $[{\themarg}]$}
+%${\ens{\themarg}}$
+\marginpar{
+\tiny{
+%\begin{flushright}
+\baselineskip7pt
+[$\themarg$] \it{#1}
+%\end{flushright}
+}
+}}
+
+%%%%% Inference rules
+\def\thesis{\vdash}
+\def\AX#1{#1\thesis#1}
+\newcommand{\CXXPR}[5]{
+\shortstack{
+$#4$
+\\
+\hspace*{#2em}\hrulefill\raisebox{-.2em}{\small $\;#1$}\hspace*{#3em}
+\\
+$#5$
+}
+}
+\newcommand{\XXPR}[4]{\shortstack{$#3$\\\hspace*{#1em}\hrulefill%
+\hspace*{#2em}\\$#4$}}
+%%%%%%%%%%% XXPR avec translation de la conclusion (??)
+\newcommand{\XXXPR}[4]{\shortstack{$#3$\\\hspace*{#1em}\hrulefill%
+\hspace*{#2em}\\
+{\count11=#1\count12=#2
+\advance\count11 by-\count12
+\divide\count11 by 2
+\hspace*{\count11em}}
+$#4$}}
+\newcommand{\XPR}[3]{\XXPR{#1}{#1}{#2}{#3}}
+\newcommand{\PR}[2]{\XXPR{0}{0}{#1}{#2}}
+\newcommand{\TR}[2]{\shortstack{$#1$\\\vdots\\\mbox{}\\$#2$}}
+\newcommand{\LR}[2]{\raisebox{#2ex}{$#1$}}
+\newcommand{\CPR}[3]{\PR{#2}{#3}\;\raisebox{1.8em}{{\small\tt#1}}}
+\newcommand{\RPR}[3]{\PR{#2}{#3}\;\raisebox{1em}{{\small\tt#1}}}
+\newcommand{\KR}[2]{\shortstack{$ #1 $\\ \mbox{} \\ $ #2 $}}
+\newcommand{\KKR}[2]{\shortstack{$ #1 $\\ \mbox{} \\\mbox{} \\ $ #2 $}}
+
+% formal bio
+\def\el{\ell}
+\def\PAR{\mathop{|}}
+\def\arit#1{\mfrk a(#1)}
+\def\sgn#1{\mfrk s(#1)}
+\def\prO#1#2#3{\protein{#1}{#2}{#3}{}}
+\def\srO#1#2{{#1}{(#2)}}
+\def\sro#1#2{\srO{#1}{#2}}
+\def\spO#1#2{{#1}{\langle#2\rangle}}
+\newcommand{\spL}[2]{{\hbox{#1}}{\langle#2\rangle}}
+\newcommand{\cO}{\hbox{$\cdot$}}
+\newcommand{\bcO}{\odot}
+\newcommand{\BcO}{\bigodot}
+%\newcommand{\so}{,}
+\newcommand{\sO}{,}
+\newcommand{\rs}{\redstep}
+\def\srs#1{\stackrel{#1}{\lrar}}
+\def\rn#1{{\mfrk{\small#1}}}
+\def\qeq{&\quad=\quad&}
+
